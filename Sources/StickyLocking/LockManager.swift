@@ -97,7 +97,7 @@ public class LockManager {
             return .granted
         }
 
-        /// We don't own the lock currnetly so if there are no waiters and our lock request mode is compatible, we can grant the lock.
+        /// We don't own the lock currently so if there are no waiters and our lock request mode is compatible, we can grant the lock.
         if !lock.queue.contains(status: .waiting) &&
            self.accessMatrix[lock.mode, request.mode] == .allow {
 
@@ -125,7 +125,7 @@ public class LockManager {
         ///
         /// Wait for someone to unlock or us to timeout.
         ///
-        /// Note: the loop protect again **spurious wakeups** because it is the singalers responsibility to change the status to something other than wating.
+        /// Note: the loop protect again **spurious wakeups** because it is the signalers responsibility to change the status to something other than waiting.
         ///
         while (request.status == .waiting) {
             request.wait(on: lock.mutex)
@@ -155,11 +155,11 @@ public class LockManager {
             return false
         }
         
-        /// Lock the lock before proceding
+        /// Lock the lock before proceeding.
         lock.mutex.lock()
 
         if let existing = lock.queue.find(for: unlocker), existing.status == .granted {
-            existing.count -= 1    /// Decrement the count for this owner
+            existing.count -= 1    /// Decrement the count for this owner.
 
             print("Unlocked\t(.\(existing.mode))\t-> (resource: \(resource) locker: \(existing.locker), count \(existing.count))") /// TODO: Remove me before production
 
@@ -168,13 +168,13 @@ public class LockManager {
                 lock.mutex.unlock()
                 self.lockTableMutex.unlock()
 
-                return true     /// Only need to decrement lock and return
+                return true     /// Only need to decrement lock and return.
             } else {
                 lock.queue.remove(request: existing)
                 lock.mode = .NL
 
                 if lock.queue.count == 0 {
-                    self.lockTable[resource] = nil      /// No locker and no waiters, deallocate lock structure and exit
+                    self.lockTable[resource] = nil      /// No locker and no waiters, deallocate the lock structure and exit.
 
                     lock.mutex.unlock()
                     self.lockTableMutex.unlock()
@@ -199,13 +199,13 @@ public class LockManager {
                 lock.mode     = LockMode.max(lock.mode, request.mode)
                 request.status = .granted
 
-                request.signal()   /// Singal the waiter that the request status has changed
+                request.signal()   /// Signal the waiter that the request status has changed
             } else {
                 ///
                 /// When a waiter request is encountered that is incompatible
-                /// it must wait and any requests behind it in the queue
+                /// it must wait and any requests behind it in the queue.
                 ///
-                /// Simply break and exit
+                /// Simply break and exit.
                 ///
                 break
             }

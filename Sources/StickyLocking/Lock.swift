@@ -28,7 +28,7 @@ internal class Lock {
         self.mutex   = Mutex()
     }
 
-    var mode:  LockMode       /// THe mode this lock was orignally locked in.
-    var queue: RequestQueue   /// Queue (FIFO) of lock requests forthis lock (owners and waiters).
-    let mutex: Mutex          /// Mutex for locking while maintaining onwers and waiters as well as waiting on the lock with a condition.
+    var mode:  LockMode       /// THe mode this lock was originally locked in.
+    var queue: RequestQueue   /// Queue (FIFO) of lock requests for this lock (owners and waiters).
+    let mutex: Mutex          /// Mutex for locking while maintaining owners and waiters as well as waiting on the lock with a condition.
 }

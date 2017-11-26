@@ -32,7 +32,7 @@ extension Lock {
         ///
         enum Status {
             case requested  /// Initial state, the lock has been requested by a thread.
-            case waiting    /// The request is currently in a wait state wating for the lock to become free.
+            case waiting    /// The request is currently in a wait state waiting for the lock to become free.
             case granted    /// The request has been granted the requested lock in the requested mode.
             case denied     /// The request has been denied.
             case timeout    /// The request timed out waiting for the lock to become free.
@@ -55,9 +55,9 @@ extension Lock {
         ///
         /// Make the `Request` wait until it's signaled to wake up.
         ///
-        /// - Parameter mutex: The mutex to reaquire before being signaled.
+        /// - Parameter mutex: The mutex to re-acquire before being signaled.
         ///
-        /// - Note: You must bracket this call to a call to mutex.lock/unlock.  Upon return from this method, the mutex passed will be reaquired.  You must unlock it again after return.
+        /// - Note: You must bracket this call to a call to mutex.lock/unlock.  Upon return from this method, the mutex passed will be required.  You must unlock it again after return.
         ///
         @inline(__always)
         @discardableResult

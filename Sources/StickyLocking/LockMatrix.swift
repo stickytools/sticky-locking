@@ -20,7 +20,7 @@
 import Swift
 
 ///
-/// A 5 x 5 constrained multidimensional array representing combinations of locks and the access allowed for each pair.
+/// A constrained multidimensional array representing combinations of locks and the access allowed for each pair.
 ///
 public struct LockMatrix {
 

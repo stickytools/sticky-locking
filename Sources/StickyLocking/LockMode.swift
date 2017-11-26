@@ -32,7 +32,7 @@ public enum LockMode: Int {
     case X      /// Exclusive
 
     ///
-    /// Returns a list of all emum values as an Array.
+    /// Returns a list of all enum values as an Array.
     ///
     public static var allValues: [LockMode] = {
         var current = NL.rawValue   /// Must be first case statement in LockMode.

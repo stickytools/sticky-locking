@@ -32,7 +32,7 @@ internal class Mutex {
     /// The type of mutex to create.
     ///
     /// .normal: Lower overhead mutex that does not allow recursion.
-    /// .recursive: Allows recursion but incures overhead due to having to keep track fo the calling thread.
+    /// .recursive: Allows recursion but incurs overhead due to having to keep track fo the calling thread.
     ///
     enum MutexType { case normal, recursive }
 
@@ -90,7 +90,7 @@ internal class Mutex {
 }
 
 ///
-/// Condition implmentation.
+/// Condition implementation.
 ///
 internal class Condition {
 
@@ -105,7 +105,7 @@ internal class Condition {
     }
 
     ///
-    /// Wait on condition represented by `self` re-aquiring mutex before return.
+    /// Wait on condition represented by `self` re-acquiring the mutex before returning.
     ///
     @inline(__always)
     @discardableResult
