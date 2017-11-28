@@ -74,8 +74,6 @@ public class LockManager {
             request.status = .granted
             lock.queue.add(request)
 
-            print("Grant\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker), no original owner)")   /// TODO: Remove me before production
-
             self.lockTableMutex.unlock()
             return .granted
         }
@@ -89,8 +87,6 @@ public class LockManager {
         if let existing = lock.queue.find(for: request.locker), existing.status == .granted {
 
             existing.count += 1 /// Increment the number of locks this owner has
-
-            print("Grant\t\t(.\(existing.mode))\t-> (resource: \(resource) locker: \(existing.locker))") /// TODO: Remove me before production
 
             lock.mutex.unlock()
             return .granted
@@ -106,9 +102,6 @@ public class LockManager {
 
             lock.queue.add(request)
 
-            /// TODO: Remove me before production
-            print("\(self.debugDescription(for: request.status))\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker)) lock request is compatible with current lock.")
-
             lock.mutex.unlock()
             return .granted
         }
@@ -118,8 +111,6 @@ public class LockManager {
         ///
         lock.queue.add(request)
         request.status = .waiting
-
-        print("\(self.debugDescription(for: request.status))\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker))")    /// TODO: Remove me before production
 
         ///
         /// Wait for someone to unlock or a timeout.
@@ -131,9 +122,6 @@ public class LockManager {
                 request.status = .timeout
             }
         }
-
-        print("\(self.debugDescription(for: request.status))\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker))")
-
         lock.mutex.unlock()
         
         switch request.status {     /// Translate RequestStatus to LockResult 
@@ -153,8 +141,6 @@ public class LockManager {
         self.lockTableMutex.lock()
 
         guard let lock = self.lockTable[resource] else {
-            print("Error: Not locked -> (resource: \(resource) locker: \(unlocker))") /// TODO: Remove me before production
-
             self.lockTableMutex.unlock()
             return false
         }
@@ -164,8 +150,6 @@ public class LockManager {
 
         if let existing = lock.queue.find(for: unlocker), existing.status == .granted {
             existing.count -= 1    /// Decrement the count for this owner.
-
-            print("Unlocked\t(.\(existing.mode))\t-> (resource: \(resource) locker: \(existing.locker), count \(existing.count))") /// TODO: Remove me before production
 
             /// If the owner count is greater than 0, this lock must be maintained.
             if existing.count > 0 {
