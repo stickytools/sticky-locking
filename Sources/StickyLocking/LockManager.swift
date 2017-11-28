@@ -26,16 +26,7 @@ import Foundation
 #endif
 
 ///
-/// `LockManager` class.
-///
-/// ```
-///     lockTable --------|
-///                       |
-///                       V
-///                   ResourceID ----> Lock
-///                       |
-///                   ResourceID ----> Lock
-/// ```
+/// `Locker` class.
 ///
 public class LockManager {
 
