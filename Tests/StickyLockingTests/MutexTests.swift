@@ -111,40 +111,54 @@ class MutexTests: XCTestCase {
 
 class ConditionTests: XCTestCase {
 
-    func testWaitWithTimeOut() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
+    func testWait() {
         let group = DispatchGroup()
 
         let mutex = Mutex(.normal)
         let condition = Condition()
 
-        var result = true
-
-        queue.async(group: group) {
+        DispatchQueue.global().async(group: group) {
             mutex.lock()
-            result = condition.wait(mutex, timeout: .now() + 0.2)
+            XCTAssertEqual(condition.wait(mutex), .success)
             mutex.unlock()
         }
         /// This call confirms that the block is waiting
         XCTAssertEqual(group.wait(timeout: .now() + 0.1), .timedOut)
 
-        group.wait()    /// Now wait until the condition times out on it's own.
+        mutex.lock()
+        condition.signal()
+        mutex.unlock()
 
-        XCTAssertEqual(result, false)   /// Condition should have returned false for timing out.
+        group.wait()    /// Now wait for the test thread to complete
     }
 
-    func testWaitWithTimeOutSignaled() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
+    func testWaitWithTimeout() {
         let group = DispatchGroup()
 
         let mutex = Mutex(.normal)
         let condition = Condition()
 
-        var result = true
-
-        queue.async(group: group) {
+        DispatchQueue.global().async(group: group) {
             mutex.lock()
-            result = condition.wait(mutex, timeout: .now() + 0.2)
+            XCTAssertEqual(condition.wait(mutex, timeout: .now() + 0.2), .timeout)   /// Condition should have returned timeout
+            mutex.unlock()
+        }
+        /// This call confirms that the block is waiting
+        XCTAssertEqual(group.wait(timeout: .now() + 0.1), .timedOut)
+
+        group.wait()    /// Now wait for the test thread to complete
+    }
+
+
+    func testWaitWithTimeOutSignaled() {
+        let group = DispatchGroup()
+
+        let mutex = Mutex(.normal)
+        let condition = Condition()
+
+        DispatchQueue.global().async(group: group) {
+            mutex.lock()
+            XCTAssertEqual(condition.wait(mutex, timeout: .now() + 0.2), .success)
             mutex.unlock()
         }
         /// This call confirms that the block is not waiting

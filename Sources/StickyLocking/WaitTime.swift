@@ -17,10 +17,10 @@
 ///
 ///  Created by Tony Stone on 11/25/17.
 ///
-#if os(Linux) || os(FreeBSD)
-    import Glibc
-#else
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
     import Darwin
+#elseif os(Linux) || os(FreeBSD) || os(PS4) || os(Android)  /* Swift 5 support: || os(Cygwin) || os(Haiku) */
+    import Glibc
 #endif
 
 ///
@@ -39,10 +39,15 @@ public struct WaitTime: Equatable {
     }
 
     ///
+    /// Maximum time wait can wait.
+    ///
+    public static let distantFuture = WaitTime(rawValue: timespec(tv_sec: time_t.max, tv_nsec: 0))
+
+    ///
     /// Add a time interval in seconds to `time`.
     ///
     public static func + (time: WaitTime, seconds: Double) -> WaitTime {
-        var result = time.timeSpec   /// Copy time
+        var result = time.timeSpec   /// Copy timespec
 
         result.tv_sec  += Int(seconds)
         result.tv_nsec += Int(seconds * Double(nanoSecondsPerSecond)) % nanoSecondsPerSecond
@@ -62,12 +67,13 @@ public struct WaitTime: Equatable {
     ///
     public static func == (lhs: WaitTime, rhs: WaitTime) -> Bool {
         return lhs.timeSpec.tv_sec  == rhs.timeSpec.tv_sec &&
-            lhs.timeSpec.tv_nsec == rhs.timeSpec.tv_nsec
+               lhs.timeSpec.tv_nsec == rhs.timeSpec.tv_nsec
     }
 
     // MARK: - Private methods and structures
 
-    private init(rawValue: timespec) {
+    internal /* @testable */
+    init(rawValue: timespec) {
         self.timeSpec = rawValue
     }
 

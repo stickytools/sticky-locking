@@ -61,8 +61,14 @@ extension Lock {
         ///
         @inline(__always)
         @discardableResult
-        func wait(on mutex: Mutex) -> Bool {
+        func wait(on mutex: Mutex) -> Condition.WaitResult {
             return self.condition.wait(mutex)
+        }
+
+        @inline(__always)
+        @discardableResult
+        func wait(on mutex: Mutex, timeout: WaitTime) -> Condition.WaitResult {
+            return self.condition.wait(mutex, timeout: timeout)
         }
 
         ///

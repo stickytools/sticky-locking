@@ -19,10 +19,10 @@
 ///
 import Foundation
 
-#if os(Linux) || os(FreeBSD)
-    import Glibc
-#else
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
     import Darwin
+#elseif os(Linux) || os(FreeBSD) || os(PS4) || os(Android)  /* Swift 5 support: || os(Cygwin) || os(Haiku) */
+    import Glibc
 #endif
 
 ///
@@ -46,7 +46,6 @@ public class LockManager {
         case granted
         case denied
         case timeout
-        case deadlock
     }
     
     ///
@@ -61,7 +60,7 @@ public class LockManager {
     ///
     /// Lock a resource in `mode`.
     ///
-    public func lock(_ resource: ResourceID, mode: LockMode) -> LockResult {
+    public func lock(_ resource: ResourceID, mode: LockMode, timeout: WaitTime = WaitTime.distantFuture) -> LockResult {
         let request = Lock.Request(mode)
 
         self.lockTableMutex.lock()
@@ -108,7 +107,7 @@ public class LockManager {
             lock.queue.add(request)
 
             /// TODO: Remove me before production
-            print("Grant\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker)) lock request is compatible with current lock.")
+            print("\(self.debugDescription(for: request.status))\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker)) lock request is compatible with current lock.")
 
             lock.mutex.unlock()
             return .granted
@@ -117,26 +116,31 @@ public class LockManager {
         ///
         /// At this point, we need to wait so add to waiter list and wait.
         ///
-        print("Wait\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker))")    /// TODO: Remove me before production
-
         lock.queue.add(request)
         request.status = .waiting
 
+        print("\(self.debugDescription(for: request.status))\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker))")    /// TODO: Remove me before production
+
         ///
-        /// Wait for someone to unlock or us to timeout.
+        /// Wait for someone to unlock or a timeout.
         ///
-        /// Note: the loop protect again **spurious wakeups** because it is the signalers responsibility to change the status to something other than waiting.
+        /// Note: the loop protects again **spurious wakeups** because it is the signalers responsibility to change the status to something other than waiting.
         ///
         while (request.status == .waiting) {
-            request.wait(on: lock.mutex)
+            if request.wait(on: lock.mutex, timeout: timeout) == .timeout {
+                request.status = .timeout
+            }
         }
 
-        if request.status == .granted {
-            print("Grant\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker))")
-        }
+        print("\(self.debugDescription(for: request.status))\t\t(.\(request.mode))\t-> (resource: \(resource) locker: \(request.locker))")
 
         lock.mutex.unlock()
-        return request.status == .granted ? .granted : .denied
+        
+        switch request.status {     /// Translate RequestStatus to LockResult 
+        case .granted: return .granted
+        case .timeout: return .timeout
+        default:       return .denied
+        }
     }
 
     ///
@@ -165,6 +169,7 @@ public class LockManager {
 
             /// If the owner count is greater than 0, this lock must be maintained.
             if existing.count > 0 {
+                
                 lock.mutex.unlock()
                 self.lockTableMutex.unlock()
 
@@ -196,7 +201,7 @@ public class LockManager {
                      self.accessMatrix[lock.mode, request.mode] == .allow {    /// or if this is a compatible lock with the rest of the lock group.
                 
                 /// Upgrade the lock mode
-                lock.mode     = LockMode.max(lock.mode, request.mode)
+                lock.mode      = LockMode.max(lock.mode, request.mode)
                 request.status = .granted
 
                 request.signal()   /// Signal the waiter that the request status has changed
@@ -213,6 +218,18 @@ public class LockManager {
         lock.mutex.unlock()
         self.lockTableMutex.unlock()
         return true
+    }
+
+    @inline(__always)
+    private func debugDescription(for status: Lock.Request.Status) -> String {
+        switch status {
+        case .requested:    return "Requested"
+        case .granted:      return "Grant"
+        case .denied:       return "Denied"
+        case .timeout:      return "Timeout"
+        case .deadlock:     return "Deadlock"
+        case .waiting:      return "Wait"
+        }
     }
 
     private let lockTableMutex: Mutex          /// Mutually locks the the critical section.

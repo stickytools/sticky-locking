@@ -91,6 +91,45 @@ class LockManagerTests: XCTestCase {
         XCTAssertEqual(group.wait(timeout: .now() + 0.1), .success)
     }
 
+    func testLockWhenExistingIncompatibleLockForcesWaitWithTimeout() throws {
+        let input = ResourceID(identifier: "database")
+
+        let group = DispatchGroup()
+
+        XCTAssertEqual(self.lockManager.lock(input, mode: .S), .granted)
+
+        /// Lock an incompatible lock on a background thread.
+        DispatchQueue.global().async(group: group) {
+            /// Attempt to aquire a lock on the main thread and allow it to timeout.
+            XCTAssertEqual(self.lockManager.lock(input, mode: .X, timeout: .now() + 0.1), .timeout)
+        }
+        group.wait()
+
+        /// Cleanup
+        XCTAssertEqual(self.lockManager.unlock(input), true)
+    }
+
+    func testLockWhenExistingIncompatibleLockAllowingTimeout() throws {
+        let input = ResourceID(identifier: "database")
+
+        let group = DispatchGroup()
+
+        /// Aquire a lock on the main thread.
+        XCTAssertEqual(self.lockManager.lock(input, mode: .X), .granted)
+
+        for _ in 0..<10 {
+            /// Lock an incompatible lock on a background thread.
+            DispatchQueue.global().async(group: group) {
+                XCTAssertEqual(self.lockManager.lock(input, mode: .S, timeout: .now() + 0.1), .timeout)
+            }
+        }
+        /// Now our lock should be aquired and has released the dispatch group.
+        XCTAssertEqual(group.wait(timeout: .now() + 2.0), .success)
+
+        /// Cleanup
+        XCTAssertEqual(self.lockManager.unlock(input), true)
+    }
+
     func testLockMultipleResourcesOnSameThread() throws {
         let input = (resourceID1: ResourceID(identifier: "database"), resourceID2: ResourceID(identifier: "page"))
 

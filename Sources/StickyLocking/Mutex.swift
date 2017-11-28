@@ -17,10 +17,10 @@
 ///
 ///  Created by Tony Stone on 11/10/17.
 ///
-#if os(Linux) || os(FreeBSD)
-    import Glibc
-#else
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
     import Darwin
+#elseif os(Linux) || os(FreeBSD) || os(PS4) || os(Android)  /* Swift 5 support: || os(Cygwin) || os(Haiku) */
+    import Glibc
 #endif
 
 ///
@@ -48,10 +48,10 @@ internal class Mutex {
     init(_ type: MutexType = .normal)  {
 
         var attributes = pthread_mutexattr_t()
-        guard pthread_mutexattr_init(&attributes) == 0 else { preconditionFailure() }
+        guard pthread_mutexattr_init(&attributes) == 0 else { fatalError("pthread_mutexattr_init") }
         pthread_mutexattr_settype(&attributes, (type == .normal) ? Int32(PTHREAD_MUTEX_NORMAL) : Int32(PTHREAD_MUTEX_RECURSIVE))
 
-        guard pthread_mutex_init(&mutex, &attributes) == 0 else { preconditionFailure() }
+        guard pthread_mutex_init(&mutex, &attributes) == 0 else { fatalError("pthread_mutex_init") }
         pthread_mutexattr_destroy(&attributes)
     }
     deinit {
@@ -95,10 +95,17 @@ internal class Mutex {
 internal class Condition {
 
     ///
+    /// Enumeration of result codes from a wait.
+    ///
+    enum WaitResult {
+        case success, timeout, error
+    }
+
+    ///
     /// Initialize `self`
     ///
     init()  {
-        guard pthread_cond_init(&condition, nil) == 0 else { preconditionFailure() }
+        guard pthread_cond_init(&condition, nil) == 0 else { fatalError("pthread_cond_init") }
     }
     deinit {
         pthread_cond_destroy(&condition)
@@ -109,22 +116,29 @@ internal class Condition {
     ///
     @inline(__always)
     @discardableResult
-    final func wait(_ mutex: Mutex) -> Bool {
-        return pthread_cond_wait(&condition, &mutex.mutex) == 0
+    final func wait(_ mutex: Mutex) -> WaitResult {
+        switch pthread_cond_wait(&condition, &mutex.mutex) {
+        case 0:  return .success
+        default: return .error
+        }
     }
 
     ///
-    /// 
+    /// Wait on condition represented by `self` re-acquiring the mutex before returning. If timeout is exceeded, return a timeout result.
     ///
     @inline(__always)
     @discardableResult
-    final func wait(_ mutex: Mutex, timeout: WaitTime) -> Bool {
+    final func wait(_ mutex: Mutex, timeout: WaitTime) -> WaitResult {
         var timeout = timeout
-        return pthread_cond_timedwait(&condition, &mutex.mutex, &timeout.timeSpec) == 0
+        switch pthread_cond_timedwait(&condition, &mutex.mutex, &timeout.timeSpec) {
+        case 0:         return .success
+        case ETIMEDOUT: return .timeout
+        default:        return .error
+        }
     }
     
     ///
-    ///
+    /// Signal the waiter, allowing it to re-aquire the mutex and continue.
     ///
     @inline(__always)
     final func signal() {
