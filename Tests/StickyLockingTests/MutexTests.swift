@@ -25,14 +25,13 @@ import Dispatch
 class MutexTests: XCTestCase {
 
     func testLockUnlock() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         let mutex = Mutex(.normal)
         mutex.lock()    /// Initially lock the mutex
 
         for _ in 0..<10 {
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
                 mutex.lock()   /// Lock and unlock the mutex, we should block until the main thread unlocks the mutex
                 mutex.unlock()
             }
@@ -42,14 +41,13 @@ class MutexTests: XCTestCase {
     }
 
     func testLockUnlockRecursive() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         let mutex = Mutex(.recursive)
         mutex.lock()    /// Initially lock the mutex
 
         for _ in 0..<10 {
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
                 mutex.lock()    /// Lock the mutex, we should block until the main thread unlocks the mutex
                 mutex.lock()    /// Inner (recursive) lock should succeed since this is a recursive mutex
 
@@ -72,14 +70,13 @@ class MutexTests: XCTestCase {
     }
 
     func testLockBlocked() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         let mutex = Mutex(.normal)
         mutex.lock()    /// Initially lock the mutex
 
         for _ in 0..<10 {
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
                 /// Lock and unlock the mutex, we should block until the main thread unlocks the mutex
                 mutex.lock()
                 mutex.unlock()
@@ -91,14 +88,13 @@ class MutexTests: XCTestCase {
     }
 
     func testTryLockBlocked() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         let mutex = Mutex(.normal)
         mutex.lock()    /// Initially lock the mutex
 
         for _ in 0..<10 {
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
                 /// Lock and unlock the mutex, this should fail (return false) but not block
                 XCTAssertFalse(mutex.tryLock())
             }
@@ -166,8 +162,6 @@ class ConditionTests: XCTestCase {
 
         condition.signal()
 
-        group.wait()    /// Now wait until the condition times out on it's own.
-
-        XCTAssertEqual(result, true)   /// Condition should have returned true since it was signaled.
+        group.wait()    /// Now wait for the test thread to complete
     }
 }

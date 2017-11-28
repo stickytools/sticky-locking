@@ -17,12 +17,15 @@
 ///
 import Foundation
 
-#if os(Linux) || os(FreeBSD)
-    import Glibc
-#else
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
     import Darwin
+#elseif os(Linux) || os(FreeBSD) || os(PS4) || os(Android)  /* Swift 5 support: || os(Cygwin) || os(Haiku) */
+    import Glibc
 #endif
 
+///
+/// Lock auxillery structures.
+///
 internal extension Lock {
 
     ///

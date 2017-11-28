@@ -35,12 +35,11 @@ class LockLockerTests: XCTestCase {
     }
 
     func testEqualFalse() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         /// Force new thread to get another locker instance.
         var other = Lock.Locker()
-        queue.async(group: group) {
+        DispatchQueue.global().async(group: group) {
             other = Lock.Locker()
         }
         group.wait()

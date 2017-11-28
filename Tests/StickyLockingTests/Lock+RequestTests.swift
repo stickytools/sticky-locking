@@ -20,12 +20,11 @@ class LockRequestTests: XCTestCase {
     }
 
     func testInitWithLocker() {
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         /// Force new thread to get another locker instance.
         var locker = Lock.Locker()
-        queue.async(group: group) {
+        DispatchQueue.global().async(group: group) {
             locker = Lock.Locker()
         }
         group.wait()
@@ -54,15 +53,14 @@ class LockRequestTests: XCTestCase {
 
     func testWaitSignal() {
 
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         let mutex = Mutex()
         let request = Lock.Request(.S)
 
-        queue.async(group: group) {
+        DispatchQueue.global().async(group: group) {
             mutex.lock()
-            XCTAssertEqual(request.wait(on: mutex), true)
+            XCTAssertEqual(request.wait(on: mutex), .success)
             mutex.unlock()
         }
         /// This call confirms that the block is waiting

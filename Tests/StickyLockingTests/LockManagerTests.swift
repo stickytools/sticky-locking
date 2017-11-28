@@ -39,6 +39,7 @@ class LockManagerTests: XCTestCase {
         let input = ResourceID(identifier: "database")
 
         XCTAssertEqual(lockManager.lock(input, mode: .X), .granted)
+        XCTAssertEqual(lockManager.unlock(input), true)
     }
 
     func testLockWhenExistingLockThatThreadOwns() throws {
@@ -46,35 +47,39 @@ class LockManagerTests: XCTestCase {
 
         XCTAssertEqual(lockManager.lock(input, mode: .X), .granted)
         XCTAssertEqual(lockManager.lock(input, mode: .X), .granted)
+
+        /// Cleanup
+        XCTAssertEqual(lockManager.unlock(input), true)
+        XCTAssertEqual(lockManager.unlock(input), true)
     }
 
     func testLockWhenExistingLockThatThreadDoesNotOwnButIsCompatible() throws {
         let input = ResourceID(identifier: "database")
-
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
-        /// Get a shared lock on a background thread
-        queue.async(group: group) {
-            XCTAssertEqual(self.lockManager.lock(input, mode: .S), .granted)
-        }
-        group.wait()    /// Wait to get it
-
-        /// Now since try to aquire a compatible lock on the main thread.
+        /// Aquire a lock on the main thread.
         XCTAssertEqual(self.lockManager.lock(input, mode: .S), .granted)
+
+        /// Get a shared lock on a background thread
+        DispatchQueue.global().async(group: group) {
+            /// Now lock with a compatible lock in the backgroun.
+            XCTAssertEqual(self.lockManager.lock(input, mode: .S), .granted)
+            XCTAssertEqual(self.lockManager.unlock(input), true)
+        }
+        XCTAssertEqual(group.wait(timeout: .now() + 0.1), .success)
+        XCTAssertEqual(self.lockManager.unlock(input), true)            /// Clean up locks
     }
 
     func testLockWhenExistingIncompatibleLockForcesWait() throws {
         let input = ResourceID(identifier: "database")
 
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         /// Aquire a lock on the main thread.
         XCTAssertEqual(self.lockManager.lock(input, mode: .X), .granted)
 
         /// Lock an incompatible lock on a background thread.
-        queue.async(group: group) {
+        DispatchQueue.global().async(group: group) {
             XCTAssertEqual(self.lockManager.lock(input, mode: .S), .granted)
             XCTAssertEqual(self.lockManager.unlock(input), true)
         }
@@ -152,12 +157,11 @@ class LockManagerTests: XCTestCase {
     func testLockUnlockCycle() {
         let input = ResourceID(identifier: "database")
 
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
         let group = DispatchGroup()
 
         /// Repeated locks and unlocks
         for _ in 0..<5 {
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
 
                 XCTAssertEqual(self.lockManager.lock(input, mode: .X), .granted)
                 XCTAssertEqual(self.lockManager.unlock(input), true)
@@ -169,13 +173,11 @@ class LockManagerTests: XCTestCase {
     func testLockUnlockCycleMultipleLocks() {
         let input = (resourceID1: ResourceID(identifier: "database"), resourceID2: ResourceID(identifier: "page"))
 
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
-
         /// Repeated locks and unlocks
         let group = DispatchGroup()
 
         for _ in 0..<5 {
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
                 XCTAssertEqual(self.lockManager.lock(input.resourceID1, mode: .IX), .granted)
                 XCTAssertEqual(self.lockManager.lock(input.resourceID2, mode: .X), .granted)
 
@@ -199,8 +201,6 @@ class LockManagerTests: XCTestCase {
 
     func testLockUnlockCycleMultipleLocksNonConflicting() {
 
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
-
         /// Repeated locks and unlocks
         let group = DispatchGroup()
 
@@ -208,7 +208,7 @@ class LockManagerTests: XCTestCase {
             let database = ResourceID(identifier: "database #\(i)")
             let page     = ResourceID(identifier: "page #\(i)")
 
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
 
                 XCTAssertEqual(self.lockManager.lock(database, mode: .IX), .granted)
                 XCTAssertEqual(self.lockManager.lock(page, mode: .X), .granted)
@@ -222,8 +222,6 @@ class LockManagerTests: XCTestCase {
 
     func testLockUnlockCycleCompatibleLockMulitpleLockers() {
 
-        let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
-
         /// Repeated locks and unlocks
         let group = DispatchGroup()
 
@@ -231,11 +229,17 @@ class LockManagerTests: XCTestCase {
 
         for _ in 0..<5 {
 
-            queue.async(group: group) {
+            DispatchQueue.global().async(group: group) {
                 XCTAssertEqual(self.lockManager.lock(page, mode: .S), .granted)
                 XCTAssertEqual(self.lockManager.unlock(page), true)
             }
         }
         group.wait()
+    }
+
+    // MARK: - Unlock tests
+
+    func testUnlockWhenNothingLocked() {
+        XCTAssertEqual(self.lockManager.unlock(ResourceID(identifier: "database")), false)
     }
 }
