@@ -102,11 +102,11 @@ public class Locker {
         request.status = .waiting
 
         ///
+        /// -> Wait <-
+        ///
         /// Wait for someone to unlock or a timeout.
         ///
-        /// Note: the loop protects against **spurious wakeups** because it is the signaler's responsibility to change the status to something other than waiting.
-        ///
-        while (request.status == .waiting) {
+        while (request.status == .waiting) {         /// Note: the loop protects against **spurious wakeups** because it is the signaler's responsibility to change the status to something other than waiting.
             if request.wait(on: lock.mutex, timeout: timeout) == .timeout {
                 request.status = .timeout
             }
@@ -132,11 +132,13 @@ public class Locker {
         guard let lock = self.lockTable[resource] else {
             return false
         }
-        
-        /// Lock the lock before proceeding.
-        lock.mutex.lock()
+
+        lock.mutex.lock() /// Lock the lock before proceeding.
         defer { lock.mutex.unlock() }
 
+        ///
+        /// Handle the case where there is an existing lock that is already granded for this requester.
+        ///
         if let existing = lock.queue.find(for: requester), existing.status == .granted {
             existing.count -= 1    /// Decrement the count for this owner.
 
@@ -154,7 +156,11 @@ public class Locker {
             }
         }
 
-        /// If there are any waiters, grant the lock to the next one (FIFO order).
+        ///
+        /// -> Handle waiters <-
+        ///
+        /// if there are any waiters, grant the lock to the next one (FIFO order).
+        ///
         for request in lock.queue {
 
             if request.status == .granted {
