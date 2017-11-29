@@ -18,7 +18,7 @@
 import Swift
 
 ///
-/// Auxillary Structures
+/// Auxiliary Structures
 ///
 extension Lock {
 
@@ -40,14 +40,14 @@ extension Lock {
         }
 
         ///
-        /// Initialize `self` with the initial `mode` and an optional `locker`.
+        /// Initialize `self` with the initial `mode` and an optional `requester`.
         ///
-        /// - Note: `locker` will default to the current threads locker if not passed.
+        /// - Note: `requester` will default to the current threads requester if not passed.
         ///
-        init(_ mode: LockMode, locker: Locker = Locker()) {
+        init(_ mode: LockMode, requester: Requester = Requester()) {
             self.mode      = mode
             self.count     = 1         /// Initial request is the first
-            self.locker    = locker
+            self.requester = requester
             self.status    = .requested
             self.condition = Condition()
         }
@@ -84,14 +84,14 @@ extension Lock {
         ///
         @inline(__always)
         static func == (lhs: Request, rhs: Request) -> Bool {
-            return lhs.mode == rhs.mode && lhs.locker == rhs.locker
+            return lhs.mode == rhs.mode && lhs.requester == rhs.requester
         }
 
-        let mode: LockMode  /// The requested lock mode.
-        var count: Int      /// The number of times this Locker requested this lock.
+        let mode: LockMode        /// The requested lock mode.
+        var count: Int            /// The number of times this Requester requested this lock.
 
-        let locker: Locker  /// The requester of this lock request.
-        var status: Status  /// the current request status (.waiting, .granted, etc).
+        let requester: Requester  /// The requester of this lock request.
+        var status: Status        /// the current request status (.waiting, .granted, etc).
 
         private let condition: Condition    /// Condition variable to allow waiting until condition is signaled.
     }

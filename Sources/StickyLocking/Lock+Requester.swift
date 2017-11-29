@@ -1,5 +1,5 @@
 ///
-///  Locker.swift
+///  Lock+Requester.swift
 ///
 ///  Licensed under the Apache License, Version 2.0 (the "License");
 ///  you may not use this file except in compliance with the License.
@@ -24,20 +24,20 @@ import Foundation
 #endif
 
 ///
-/// Lock auxillery structures.
+/// Lock auxiliary structures.
 ///
 internal extension Lock {
 
     ///
-    /// Class which identifies the locker that is locking or unlocking the lock.
+    /// Class which identifies the requester that is locking or unlocking the lock.
     ///
-    class Locker: Equatable {
+    class Requester: Equatable {
         init() {
             self.thread = pthread_self()
         }
 
         @inline(__always)
-        static func == (lhs: Locker, rhs: Locker) -> Bool {
+        static func == (lhs: Requester, rhs: Requester) -> Bool {
             return lhs.thread == rhs.thread
         }
         private let thread: pthread_t
@@ -47,7 +47,7 @@ internal extension Lock {
 ///
 /// `CustomStringConvertible` and `CustomDebugStringConvertible` conformance.
 ///
-extension Lock.Locker: CustomStringConvertible, CustomDebugStringConvertible {
+extension Lock.Requester: CustomStringConvertible, CustomDebugStringConvertible {
 
     var description: String {
         return "\(self.thread)"

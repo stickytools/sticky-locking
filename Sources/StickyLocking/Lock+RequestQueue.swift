@@ -45,12 +45,12 @@ extension Lock {
         }
 
         ///
-        /// Returns an existing entry that contains a matching `Locker`.
+        /// Returns an existing entry that contains a matching `Requester`.
         ///
         @inline(__always)
         @discardableResult
-        func find(for locker: Locker) -> Request? {
-            guard let index = storage.index(where: { $0.locker == locker })
+        func find(for requester: Requester) -> Request? {
+            guard let index = storage.index(where: { $0.requester == requester })
                 else { return nil }
 
             return storage[index]

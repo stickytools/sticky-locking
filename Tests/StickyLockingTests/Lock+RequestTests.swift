@@ -16,20 +16,20 @@ class LockRequestTests: XCTestCase {
     }
 
     func testInitWithDefaultLockerValue() {
-        XCTAssertEqual(Lock.Request(.NL).locker, Lock.Locker())
+        XCTAssertEqual(Lock.Request(.NL).requester, Lock.Requester())
     }
 
     func testInitWithLocker() {
         let group = DispatchGroup()
 
-        /// Force new thread to get another locker instance.
-        var locker = Lock.Locker()
+        /// Force new thread to get another requester instance.
+        var locker = Lock.Requester()
         DispatchQueue.global().async(group: group) {
-            locker = Lock.Locker()
+            locker = Lock.Requester()
         }
         group.wait()
 
-        XCTAssertEqual(Lock.Request(.NL, locker: locker).locker, locker)
+        XCTAssertEqual(Lock.Request(.NL, requester: locker).requester, locker)
     }
 
     func testStatusDefaultValue() {
