@@ -26,12 +26,13 @@ import StickyLocking
 class LockMatrixTests: XCTestCase {
 
     func testInitArrayLiteral() {
-        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow]])
+        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow]])
 
         for row in LockMode.allValues {
             for col in LockMode.allValues {
@@ -49,6 +50,7 @@ class LockMatrixTests: XCTestCase {
         XCTAssertEqual(matrix[.NL, .IX],  .allow)
         XCTAssertEqual(matrix[.NL, .S],   .allow)
         XCTAssertEqual(matrix[.NL, .SIX], .allow)
+        XCTAssertEqual(matrix[.NL, .U],   .allow)
         XCTAssertEqual(matrix[.NL, .X],   .allow)
 
         /// IS
@@ -57,6 +59,7 @@ class LockMatrixTests: XCTestCase {
         XCTAssertEqual(matrix[.IS, .IX],  .allow)
         XCTAssertEqual(matrix[.IS, .S],   .allow)
         XCTAssertEqual(matrix[.IS, .SIX], .allow)
+        XCTAssertEqual(matrix[.IS, .U],   .allow)
         XCTAssertEqual(matrix[.IS, .X],   .deny)
 
         /// IX
@@ -65,6 +68,7 @@ class LockMatrixTests: XCTestCase {
         XCTAssertEqual(matrix[.IX, .IX],  .allow)
         XCTAssertEqual(matrix[.IX, .S],   .deny)
         XCTAssertEqual(matrix[.IX, .SIX], .deny)
+        XCTAssertEqual(matrix[.IX, .U],   .deny)
         XCTAssertEqual(matrix[.IX, .X],   .deny)
 
         /// S
@@ -73,6 +77,7 @@ class LockMatrixTests: XCTestCase {
         XCTAssertEqual(matrix[.S, .IX],  .deny)
         XCTAssertEqual(matrix[.S, .S],   .allow)
         XCTAssertEqual(matrix[.S, .SIX], .deny)
+        XCTAssertEqual(matrix[.S, .U],   .allow)
         XCTAssertEqual(matrix[.S, .X],   .deny)
 
         /// SIX
@@ -81,6 +86,7 @@ class LockMatrixTests: XCTestCase {
         XCTAssertEqual(matrix[.SIX, .IX],  .deny)
         XCTAssertEqual(matrix[.SIX, .S],   .deny)
         XCTAssertEqual(matrix[.SIX, .SIX], .deny)
+        XCTAssertEqual(matrix[.SIX, .U],   .deny)
         XCTAssertEqual(matrix[.SIX, .X],   .deny)
 
         /// X
@@ -89,44 +95,49 @@ class LockMatrixTests: XCTestCase {
         XCTAssertEqual(matrix[.X, .IX],  .deny)
         XCTAssertEqual(matrix[.X, .S],   .deny)
         XCTAssertEqual(matrix[.X, .SIX], .deny)
+        XCTAssertEqual(matrix[.X, .U],   .deny)
         XCTAssertEqual(matrix[.X, .X],   .deny)
     }
 
     func testDescription() {
-        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .deny,  .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow]])
+        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow]])
 
 
         XCTAssertEqual(matrix.description, """
-                [[.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .deny,  .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow]]
+                [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow]]
                 """)
     }
 
     func testDebugDescription() {
-        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .deny,  .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow]])
+        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow]])
 
 
         XCTAssertEqual(matrix.debugDescription, """
-                [[.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .deny,  .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow]]
+                [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow]]
                 """)
     }
 }

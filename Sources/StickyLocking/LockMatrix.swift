@@ -42,13 +42,14 @@ extension LockMatrix {
 
     public static let defaultMatrix = LockMatrix(arrayLiteral:
         [
-            /*            NL,    IS,     IX,     S,      SIX,    X   */
-            /* NL  */  [.allow, .allow, .allow, .allow, .allow, .allow],
-            /* IS  */  [.allow, .allow, .allow, .allow, .allow, .deny],
-            /* IX  */  [.allow, .allow, .allow, .deny,  .deny,  .deny],
-            /* S   */  [.allow, .allow, .deny,  .allow, .deny,  .deny],
-            /* SIX */  [.allow, .allow, .deny,  .deny,  .deny,  .deny],
-            /* IS  */  [.allow, .deny,  .deny,  .deny,  .deny,  .deny]
+            /* Requested        NL,    IS,     IX,     S,      SIX,     U,      X   */
+            /* NL        */  [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
+            /* IS        */  [.allow, .allow, .allow, .allow, .allow, .allow, .deny],
+            /* IX        */  [.allow, .allow, .allow, .deny,  .deny,  .deny,  .deny],
+            /* S         */  [.allow, .allow, .deny,  .allow, .deny,  .allow, .deny],
+            /* SIX       */  [.allow, .allow, .deny,  .deny,  .deny,  .deny,  .deny],
+            /* U         */  [.allow, .deny,  .deny,  .deny,  .deny,  .deny,  .deny],
+            /* X         */  [.allow, .deny,  .deny,  .deny,  .deny,  .deny,  .deny]
         ]
     )
 
@@ -58,21 +59,17 @@ extension LockMatrix {
     ///
     /// - Parameter: arrayLiteral: [[Access]] Array of `Access` arrays.
     ///
-    /// - Requires: arrayLiteral.count == 6
-    /// - Requires: arrayLiteral[0].count == 6
-    /// - Requires: arrayLiteral[1].count == 6
-    /// - Requires: arrayLiteral[2].count == 6
-    /// - Requires: arrayLiteral[3].count == 6
-    /// - Requires: arrayLiteral[4].count == 6
+    /// - Requires: 7 x 7 matrix passed.
     ///
     public init(arrayLiteral elements: [[Access]]) {
-        assert( elements.count == 6 &&
-            elements[LockMode.NL.rawValue].count  == 6 &&
-            elements[LockMode.IS.rawValue].count  == 6 &&
-            elements[LockMode.IX.rawValue].count  == 6 &&
-            elements[LockMode.S.rawValue].count   == 6 &&
-            elements[LockMode.SIX.rawValue].count == 6 &&
-            elements[LockMode.X.rawValue].count   == 6
+        assert( elements.count == 7 &&
+            elements[LockMode.NL.rawValue].count  == 7 &&
+            elements[LockMode.IS.rawValue].count  == 7 &&
+            elements[LockMode.IX.rawValue].count  == 7 &&
+            elements[LockMode.S.rawValue].count   == 7 &&
+            elements[LockMode.SIX.rawValue].count == 7 &&
+            elements[LockMode.U.rawValue].count   == 7 &&
+            elements[LockMode.X.rawValue].count   == 7
         )
         self.matrix = elements
     }

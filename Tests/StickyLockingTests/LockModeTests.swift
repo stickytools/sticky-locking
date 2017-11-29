@@ -34,6 +34,7 @@ class LockModeTests: XCTestCase {
             case .IX:  fallthrough
             case .S:   fallthrough
             case .SIX: fallthrough
+            case .U:   fallthrough
             case .X:   XCTAssert(true)
                 /// WARNING: DO NOT ADD A DEFAULT case path here.
             }
@@ -44,7 +45,7 @@ class LockModeTests: XCTestCase {
 
         let input = LockMode.allValues
 
-        XCTAssertEqual(input.count, 6)  ///Make sure it only contains the number of known values.
+        XCTAssertEqual(input.count, 7)  ///Make sure it only contains the number of known values.
 
         /// Make sure it contains all the known values
         XCTAssertTrue(input.contains(.NL))
@@ -52,6 +53,7 @@ class LockModeTests: XCTestCase {
         XCTAssertTrue(input.contains(.IX))
         XCTAssertTrue(input.contains(.S))
         XCTAssertTrue(input.contains(.SIX))
+        XCTAssertTrue(input.contains(.U))
         XCTAssertTrue(input.contains(.X))
     }
 

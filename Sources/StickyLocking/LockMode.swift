@@ -29,6 +29,7 @@ public enum LockMode: Int {
     case IX     /// Intention Exclusive
     case S      /// Shared
     case SIX    /// Shared Intention Exclusive
+    case U      /// Used on resources that can be updated. Prevents a common form of deadlock that occurs when multiple sessions are reading, locking, and potentially updating resources later.
     case X      /// Exclusive
 
     ///
