@@ -72,14 +72,14 @@ public class Locker {
 
         /// Crab to the lock mutex, do not unlock the lock table until the lock is locked.
         lock.mutex.lock()
+        defer { lock.mutex.unlock() }
+
         self.lockTableMutex.unlock()
 
         /// The lock is currently owned, do we own this lock?
         if let existing = lock.queue.find(for: request.requester), existing.status == .granted {
 
             existing.count += 1 /// Increment the number of locks this owner has
-
-            lock.mutex.unlock()
             return .granted
         }
 
@@ -92,8 +92,6 @@ public class Locker {
             request.status = .granted
 
             lock.queue.add(request)
-
-            lock.mutex.unlock()
             return .granted
         }
 
@@ -113,8 +111,7 @@ public class Locker {
                 request.status = .timeout
             }
         }
-        lock.mutex.unlock()
-        
+
         switch request.status {     /// Translate RequestStatus to LockResult 
         case .granted: return .granted
         case .timeout: return .timeout
@@ -130,24 +127,21 @@ public class Locker {
         let requester = Lock.Requester()
 
         self.lockTableMutex.lock()
+        defer { self.lockTableMutex.unlock() }
 
         guard let lock = self.lockTable[resource] else {
-            self.lockTableMutex.unlock()
             return false
         }
         
         /// Lock the lock before proceeding.
         lock.mutex.lock()
+        defer { lock.mutex.unlock() }
 
         if let existing = lock.queue.find(for: requester), existing.status == .granted {
             existing.count -= 1    /// Decrement the count for this owner.
 
             /// If the owner count is greater than 0, this lock must be maintained.
             if existing.count > 0 {
-                
-                lock.mutex.unlock()
-                self.lockTableMutex.unlock()
-
                 return true     /// Only need to decrement lock and return.
             } else {
                 lock.queue.remove(request: existing)
@@ -155,10 +149,6 @@ public class Locker {
 
                 if lock.queue.count == 0 {
                     self.lockTable[resource] = nil      /// No requester and no waiters, deallocate the lock structure and exit.
-
-                    lock.mutex.unlock()
-                    self.lockTableMutex.unlock()
-
                     return true
                 }
             }
@@ -190,8 +180,6 @@ public class Locker {
                 break
             }
         }
-        lock.mutex.unlock()
-        self.lockTableMutex.unlock()
         return true
     }
 
