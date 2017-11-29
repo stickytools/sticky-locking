@@ -1,5 +1,5 @@
 ///
-///  LockManagerTests.swift
+///  LockerTests.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -23,14 +23,14 @@ import Dispatch
 import StickyLocking
 
 ///
-/// `LockManager` Tests
+/// `Locker` Tests
 ///
-class LockManagerTests: XCTestCase {
+class LockerTests: XCTestCase {
 
-    let lockManager = LockManager()
+    let lockManager = Locker()
 
     func testInit() {
-        XCTAssertNotNil(LockManager())
+        XCTAssertNotNil(Locker())
     }
 
     // MARK: - Targeted Tests
@@ -75,7 +75,7 @@ class LockManagerTests: XCTestCase {
 
         let group = DispatchGroup()
 
-        /// Aquire a lock on the main thread.
+        /// Acquire a lock on the main thread.
         XCTAssertEqual(self.lockManager.lock(input, mode: .X), .granted)
 
         /// Lock an incompatible lock on a background thread.
@@ -92,7 +92,7 @@ class LockManagerTests: XCTestCase {
         /// Now unlock the the main threads lock allowing it to be granted to the background waiter
         XCTAssertEqual(self.lockManager.unlock(input), true)
 
-        /// Now our lock should be aquired and has released the dispatch group.
+        /// Now our lock should be acquired and has released the dispatch group.
         XCTAssertEqual(group.wait(timeout: .now() + 0.1), .success)
     }
 
@@ -105,7 +105,7 @@ class LockManagerTests: XCTestCase {
 
         /// Lock an incompatible lock on a background thread.
         DispatchQueue.global().async(group: group) {
-            /// Attempt to aquire a lock on the main thread and allow it to timeout.
+            /// Attempt to acquire a lock on the main thread and allow it to timeout.
             XCTAssertEqual(self.lockManager.lock(input, mode: .X, timeout: .now() + 0.1), .timeout)
         }
         group.wait()
@@ -119,7 +119,7 @@ class LockManagerTests: XCTestCase {
 
         let group = DispatchGroup()
 
-        /// Aquire a lock on the main thread.
+        /// Acquire a lock on the main thread.
         XCTAssertEqual(self.lockManager.lock(input, mode: .X), .granted)
 
         for _ in 0..<10 {
@@ -128,7 +128,7 @@ class LockManagerTests: XCTestCase {
                 XCTAssertEqual(self.lockManager.lock(input, mode: .S, timeout: .now() + 0.1), .timeout)
             }
         }
-        /// Now our lock should be aquired and has released the dispatch group.
+        /// Now our lock should be acquired and has released the dispatch group.
         XCTAssertEqual(group.wait(timeout: .now() + 2.0), .success)
 
         /// Cleanup

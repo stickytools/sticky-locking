@@ -1,5 +1,5 @@
 ///
-///  LockManager.swift
+///  Locker.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -26,9 +26,9 @@ import Foundation
 #endif
 
 ///
-/// `Locker` class.
+/// The `Locker` class is an implementation of a high concurrency hierarchical lock manager.
 ///
-public class LockManager {
+public class Locker {
 
     ///
     /// Result of requesting a lock on an resource.
@@ -75,7 +75,7 @@ public class LockManager {
         self.lockTableMutex.unlock()
 
         /// The lock is currently owned, do we own this lock?
-        if let existing = lock.queue.find(for: request.locker), existing.status == .granted {
+        if let existing = lock.queue.find(for: request.requester), existing.status == .granted {
 
             existing.count += 1 /// Increment the number of locks this owner has
 
@@ -106,7 +106,7 @@ public class LockManager {
         ///
         /// Wait for someone to unlock or a timeout.
         ///
-        /// Note: the loop protects again **spurious wakeups** because it is the signalers responsibility to change the status to something other than waiting.
+        /// Note: the loop protects against **spurious wakeups** because it is the signaler's responsibility to change the status to something other than waiting.
         ///
         while (request.status == .waiting) {
             if request.wait(on: lock.mutex, timeout: timeout) == .timeout {
@@ -127,7 +127,7 @@ public class LockManager {
     ///
     @discardableResult
     public func unlock(_ resource: ResourceID) -> Bool {
-        let unlocker = Lock.Locker()
+        let requester = Lock.Requester()
 
         self.lockTableMutex.lock()
 
@@ -139,7 +139,7 @@ public class LockManager {
         /// Lock the lock before proceeding.
         lock.mutex.lock()
 
-        if let existing = lock.queue.find(for: unlocker), existing.status == .granted {
+        if let existing = lock.queue.find(for: requester), existing.status == .granted {
             existing.count -= 1    /// Decrement the count for this owner.
 
             /// If the owner count is greater than 0, this lock must be maintained.
@@ -154,7 +154,7 @@ public class LockManager {
                 lock.mode = .NL
 
                 if lock.queue.count == 0 {
-                    self.lockTable[resource] = nil      /// No locker and no waiters, deallocate the lock structure and exit.
+                    self.lockTable[resource] = nil      /// No requester and no waiters, deallocate the lock structure and exit.
 
                     lock.mutex.unlock()
                     self.lockTableMutex.unlock()
@@ -193,18 +193,6 @@ public class LockManager {
         lock.mutex.unlock()
         self.lockTableMutex.unlock()
         return true
-    }
-
-    @inline(__always)
-    private func debugDescription(for status: Lock.Request.Status) -> String {
-        switch status {
-        case .requested:    return "Requested"
-        case .granted:      return "Grant"
-        case .denied:       return "Denied"
-        case .timeout:      return "Timeout"
-        case .deadlock:     return "Deadlock"
-        case .waiting:      return "Wait"
-        }
     }
 
     private let lockTableMutex: Mutex          /// Mutually locks the the critical section.
