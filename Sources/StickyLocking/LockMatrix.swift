@@ -25,14 +25,9 @@ import Swift
 public struct LockMatrix {
 
     ///
-    /// Access specifier for lock matrix
-    ///
-    public enum Access { case allow, deny }
-
-    ///
     /// Internal storage array of arrays
     ///
-    private var matrix: [[Access]]
+    private var matrix: [[Bool]]
 }
 
 ///
@@ -42,14 +37,14 @@ extension LockMatrix {
 
     public static let defaultMatrix = LockMatrix(arrayLiteral:
         [
-            /* Requested        NL,    IS,     IX,     S,      SIX,     U,      X   */
-            /* NL        */  [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-            /* IS        */  [.allow, .allow, .allow, .allow, .allow, .allow, .deny],
-            /* IX        */  [.allow, .allow, .allow, .deny,  .deny,  .deny,  .deny],
-            /* S         */  [.allow, .allow, .deny,  .allow, .deny,  .allow, .deny],
-            /* SIX       */  [.allow, .allow, .deny,  .deny,  .deny,  .deny,  .deny],
-            /* U         */  [.allow, .deny,  .deny,  .deny,  .deny,  .deny,  .deny],
-            /* X         */  [.allow, .deny,  .deny,  .deny,  .deny,  .deny,  .deny]
+            /* Requested      NL,    IS,    IX,    S,    SIX,    U,     X   */
+            /* NL        */  [true, true,  true,  true,  true,  true,  true],
+            /* IS        */  [true, true,  true,  true,  true,  true,  false],
+            /* IX        */  [true, true,  true,  false, false, false, false],
+            /* S         */  [true, true,  false, true,  false, true,  false],
+            /* SIX       */  [true, true,  false, false, false, false, false],
+            /* U         */  [true, true,  false, true,  false, false, false],
+            /* X         */  [true, false, false, false, false, false, false]
         ]
     )
 
@@ -57,11 +52,11 @@ extension LockMatrix {
     /// Initialize an LockMatrix with an Array of Arrays of
     /// of Access values.
     ///
-    /// - Parameter: arrayLiteral: [[Access]] Array of `Access` arrays.
+    /// - Parameter: arrayLiteral: [[Bool]] Array of `Bool` arrays.
     ///
     /// - Requires: 7 x 7 matrix passed.
     ///
-    public init(arrayLiteral elements: [[Access]]) {
+    public init(arrayLiteral elements: [[Bool]]) {
         assert( elements.count == 7 &&
             elements[LockMode.NL.rawValue].count  == 7 &&
             elements[LockMode.IS.rawValue].count  == 7 &&
@@ -81,21 +76,14 @@ extension LockMatrix {
 extension LockMatrix {
 
     ///
-    /// subscript the matrix returning a `Access` type
+    /// Returns whether the `requested` mode is compatible with the `current` mode.
     ///
     /// - Parameters:
-    /// - row: the row in the matrix expressed as an LockMode value.
-    /// - col: the column in the matrix expressed as an LockMode value.
+    /// - requested: the requested mode in the matrix expressed as a LockMode value.
+    /// - current: the current mode in the matrix expressed as a LockMode value.
     ///
-    /// Example:
-    /// ```
-    ///    let matrix = LockMatrix()
-    ///
-    ///    let access = matrix[.IS, .IX]
-    /// ```
-    ///
-    public subscript (row: LockMode, col: LockMode) -> Access {
-        get { return matrix[row.rawValue][col.rawValue] }
+    public func compatible(requested: LockMode, current: LockMode) -> Bool {
+        return matrix[requested.rawValue][current.rawValue]
     }
 }
 
@@ -112,9 +100,9 @@ extension LockMatrix: CustomStringConvertible, CustomDebugStringConvertible {
             var first = true
             var lastCount = 0
             for col in 0..<modeCount {
-                if !first { string += ", " + String(repeatElement(" ", count: 6 - lastCount)) }
+                if !first { string += ", " + String(repeatElement(" ", count: 5 - lastCount)) }
 
-                let modeString = ".\(self.matrix[row][col])"
+                let modeString = "\(self.matrix[row][col])"
                 string += modeString
 
                 first = false; lastCount = modeString.count

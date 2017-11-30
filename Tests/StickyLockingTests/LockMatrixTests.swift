@@ -26,17 +26,17 @@ import StickyLocking
 class LockMatrixTests: XCTestCase {
 
     func testInitArrayLiteral() {
-        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow]])
+        let matrix = LockMatrix(arrayLiteral: [[true, true, true, true, true, true, true],
+                                               [true, true, true, true, true, true, true],
+                                               [true, true, true, true, true, true, true],
+                                               [true, true, true, true, true, true, true],
+                                               [true, true, true, true, true, true, true],
+                                               [true, true, true, true, true, true, true],
+                                               [true, true, true, true, true, true, true]])
 
-        for row in LockMode.allValues {
-            for col in LockMode.allValues {
-                XCTAssertEqual(matrix[row, col], LockMatrix.Access.allow)
+        for requested in LockMode.allValues {
+            for current in LockMode.allValues {
+                XCTAssertEqual(matrix.compatible(requested: requested, current: current), true)
             }
         }
     }
@@ -45,99 +45,108 @@ class LockMatrixTests: XCTestCase {
         let matrix = LockMatrix.defaultMatrix
 
         /// NL
-        XCTAssertEqual(matrix[.NL, .NL],  .allow)
-        XCTAssertEqual(matrix[.NL, .IS],  .allow)
-        XCTAssertEqual(matrix[.NL, .IX],  .allow)
-        XCTAssertEqual(matrix[.NL, .S],   .allow)
-        XCTAssertEqual(matrix[.NL, .SIX], .allow)
-        XCTAssertEqual(matrix[.NL, .U],   .allow)
-        XCTAssertEqual(matrix[.NL, .X],   .allow)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .IS),  true)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .IX),  true)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .S),   true)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .SIX), true)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .U),   true)
+        XCTAssertEqual(matrix.compatible(requested: .NL, current: .X),   true)
 
         /// IS
-        XCTAssertEqual(matrix[.IS, .NL],  .allow)
-        XCTAssertEqual(matrix[.IS, .IS],  .allow)
-        XCTAssertEqual(matrix[.IS, .IX],  .allow)
-        XCTAssertEqual(matrix[.IS, .S],   .allow)
-        XCTAssertEqual(matrix[.IS, .SIX], .allow)
-        XCTAssertEqual(matrix[.IS, .U],   .allow)
-        XCTAssertEqual(matrix[.IS, .X],   .deny)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .IS),  true)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .IX),  true)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .S),   true)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .SIX), true)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .U),   true)
+        XCTAssertEqual(matrix.compatible(requested: .IS, current: .X),   false)
 
         /// IX
-        XCTAssertEqual(matrix[.IX, .NL],  .allow)
-        XCTAssertEqual(matrix[.IX, .IS],  .allow)
-        XCTAssertEqual(matrix[.IX, .IX],  .allow)
-        XCTAssertEqual(matrix[.IX, .S],   .deny)
-        XCTAssertEqual(matrix[.IX, .SIX], .deny)
-        XCTAssertEqual(matrix[.IX, .U],   .deny)
-        XCTAssertEqual(matrix[.IX, .X],   .deny)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .IS),  true)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .IX),  true)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .S),   false)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .SIX), false)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .U),   false)
+        XCTAssertEqual(matrix.compatible(requested: .IX, current: .X),   false)
 
         /// S
-        XCTAssertEqual(matrix[.S, .NL],  .allow)
-        XCTAssertEqual(matrix[.S, .IS],  .allow)
-        XCTAssertEqual(matrix[.S, .IX],  .deny)
-        XCTAssertEqual(matrix[.S, .S],   .allow)
-        XCTAssertEqual(matrix[.S, .SIX], .deny)
-        XCTAssertEqual(matrix[.S, .U],   .allow)
-        XCTAssertEqual(matrix[.S, .X],   .deny)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .IS),  true)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .IX),  false)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .S),   true)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .SIX), false)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .U),   true)
+        XCTAssertEqual(matrix.compatible(requested: .S, current: .X),   false)
 
         /// SIX
-        XCTAssertEqual(matrix[.SIX, .NL],  .allow)
-        XCTAssertEqual(matrix[.SIX, .IS],  .allow)
-        XCTAssertEqual(matrix[.SIX, .IX],  .deny)
-        XCTAssertEqual(matrix[.SIX, .S],   .deny)
-        XCTAssertEqual(matrix[.SIX, .SIX], .deny)
-        XCTAssertEqual(matrix[.SIX, .U],   .deny)
-        XCTAssertEqual(matrix[.SIX, .X],   .deny)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .IS),  true)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .IX),  false)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .S),   false)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .SIX), false)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .U),   false)
+        XCTAssertEqual(matrix.compatible(requested: .SIX, current: .X),   false)
+
+        /// U
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .IS),  true)
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .IX),  false)
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .S),   true)
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .SIX), false)
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .U),   false)
+        XCTAssertEqual(matrix.compatible(requested: .U, current: .X),   false)
 
         /// X
-        XCTAssertEqual(matrix[.X, .NL],  .allow)
-        XCTAssertEqual(matrix[.X, .IS],  .deny)
-        XCTAssertEqual(matrix[.X, .IX],  .deny)
-        XCTAssertEqual(matrix[.X, .S],   .deny)
-        XCTAssertEqual(matrix[.X, .SIX], .deny)
-        XCTAssertEqual(matrix[.X, .U],   .deny)
-        XCTAssertEqual(matrix[.X, .X],   .deny)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .NL),  true)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .IS),  false)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .IX),  false)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .S),   false)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .SIX), false)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .U),   false)
+        XCTAssertEqual(matrix.compatible(requested: .X, current: .X),   false)
     }
 
     func testDescription() {
-        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow]])
+        let matrix = LockMatrix(arrayLiteral: [[true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, false, true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true]])
 
 
         XCTAssertEqual(matrix.description, """
-                [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow]]
+                [[true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  false, true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true]]
                 """)
     }
 
     func testDebugDescription() {
-        let matrix = LockMatrix(arrayLiteral: [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                                               [.allow, .allow, .allow, .allow, .allow, .allow, .allow]])
+        let matrix = LockMatrix(arrayLiteral: [[true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, false, true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true],
+                                               [true, true, true, true,  true, true, true]])
 
 
         XCTAssertEqual(matrix.debugDescription, """
-                [[.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .deny,  .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow],
-                 [.allow, .allow, .allow, .allow, .allow, .allow, .allow]]
+                [[true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  false, true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true],
+                 [true,  true,  true,  true,  true,  true,  true]]
                 """)
     }
 }

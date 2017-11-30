@@ -85,7 +85,7 @@ public class Locker {
 
         /// We don't own the lock currently so if there are no waiters and our lock request mode is compatible, we can grant the lock.
         if !lock.queue.contains(status: .waiting) &&
-           self.accessMatrix[lock.mode, request.mode] == .allow {
+           self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {
 
             /// Upgrade the current lock mode.
             lock.mode = LockMode.max(lock.mode, request.mode)
@@ -168,8 +168,8 @@ public class Locker {
                 /// If already granted, we need to realigned (possibly downgrade) the group mode of the current lock.
                 lock.mode = LockMode.max(lock.mode, request.mode)
 
-            } else if request.status == .waiting  &&
-                     self.accessMatrix[lock.mode, request.mode] == .allow {    /// or if this is a compatible lock with the rest of the lock group.
+            } else if request.status == .waiting &&
+                  self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {    /// or if this is a compatible lock with the rest of the lock group.
                 
                 /// Upgrade the lock mode
                 lock.mode      = LockMode.max(lock.mode, request.mode)
