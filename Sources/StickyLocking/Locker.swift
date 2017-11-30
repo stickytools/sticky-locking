@@ -52,7 +52,7 @@ public class Locker {
     /// Lock a resource in `mode`.
     ///
     public func lock(_ resource: ResourceID, mode: LockMode, timeout: WaitTime = WaitTime.distantFuture) -> LockResult {
-        let request = Lock.Request(mode)
+        let requester = Lock.Requester()
 
         self.lockTableMutex.lock()
 
@@ -62,8 +62,7 @@ public class Locker {
             let lock = Lock(mode: mode)
             self.lockTable[resource] = lock
 
-            request.status = .granted
-            lock.queue.add(request)
+            lock.queue.add(Lock.Request(mode, status: .granted, requester: requester))
 
             self.lockTableMutex.unlock()
             return .granted
@@ -77,35 +76,34 @@ public class Locker {
         self.lockTableMutex.unlock()
 
         /// The lock is currently owned, do we own this lock?
-        if let existing = lock.queue.find(for: request.requester), existing.status == .granted {
+        if let existing = lock.queue.find(for: requester), existing.status == .granted {
 
             existing.count += 1 /// Increment the number of locks this owner has
             return .granted
         }
+
+        /// It's a new request
+        let request = Lock.Request(mode, requester: requester)
+        lock.queue.add(request)
 
         /// We don't own the lock currently so if there are no waiters and our lock request mode is compatible, we can grant the lock.
         if !lock.queue.contains(status: .waiting) &&
            self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {
 
             /// Upgrade the current lock mode.
-            lock.mode = LockMode.max(lock.mode, request.mode)
+            lock.mode = LockMode.max(request.mode, lock.mode)
             request.status = .granted
 
-            lock.queue.add(request)
             return .granted
         }
 
         ///
-        /// At this point, we need to wait so add to waiter list and wait.
-        ///
-        lock.queue.add(request)
-        request.status = .waiting
-
-        ///
         /// -> Wait <-
         ///
-        /// Wait for someone to unlock or a timeout.
+        /// At this point, we need to wait so add to waiter list and wait.
         ///
+        request.status = .waiting
+
         while (request.status == .waiting) {         /// Note: the loop protects against **spurious wakeups** because it is the signaler's responsibility to change the status to something other than waiting.
             if request.wait(on: lock.mutex, timeout: timeout) == .timeout {
                 request.status = .timeout

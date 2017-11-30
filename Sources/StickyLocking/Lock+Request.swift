@@ -44,11 +44,11 @@ extension Lock {
         ///
         /// - Note: `requester` will default to the current threads requester if not passed.
         ///
-        init(_ mode: LockMode, requester: Requester = Requester()) {
+        init(_ mode: LockMode, status: Status = .requested, requester: Requester = Requester()) {
             self.mode      = mode
             self.count     = 1         /// Initial request is the first
             self.requester = requester
-            self.status    = .requested
+            self.status    = status
             self.condition = Condition()
         }
 
