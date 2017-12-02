@@ -42,7 +42,7 @@ public class Locker {
     ///
     /// Initialize `self`
     ///
-    public init(accessMatrix: LockMatrix = LockMatrix.defaultMatrix) {
+    public init(accessMatrix: LockConflictMatrix = LockConflictMatrix.default) {
         self.lockTable       = [:]
         self.lockTableMutex  = Mutex(.normal)
         self.accessMatrix    = accessMatrix
@@ -67,7 +67,7 @@ public class Locker {
             self.lockTableMutex.unlock()
             return .granted
         }
-        /// Existing lock
+        /// -> Lock Exists <-
 
         /// Crab to the lock mutex, do not unlock the lock table until the lock is locked.
         lock.mutex.lock()
@@ -91,7 +91,7 @@ public class Locker {
            self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {
 
             /// Upgrade the current lock mode.
-            lock.mode = LockMode.max(request.mode, lock.mode)
+            lock.mode = Locker.max(request.mode, lock.mode)
             request.status = .granted
 
             return .granted
@@ -145,7 +145,7 @@ public class Locker {
                 return true     /// Only need to decrement lock and return.
             } else {
                 lock.queue.remove(request: existing)
-                lock.mode = .NL
+                lock.mode = nil
 
                 if lock.queue.count == 0 {
                     self.lockTable[resource] = nil      /// No requester and no waiters, deallocate the lock structure and exit.
@@ -164,13 +164,13 @@ public class Locker {
             if request.status == .granted {
 
                 /// If already granted, we need to realigned (possibly downgrade) the group mode of the current lock.
-                lock.mode = LockMode.max(lock.mode, request.mode)
+                lock.mode = Locker.max(request.mode, lock.mode)
 
             } else if request.status == .waiting &&
                   self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {    /// or if this is a compatible lock with the rest of the lock group.
                 
                 /// Upgrade the lock mode
-                lock.mode      = LockMode.max(lock.mode, request.mode)
+                lock.mode      = Locker.max(request.mode, lock.mode)
                 request.status = .granted
 
                 request.signal()   /// Signal the waiter that the request status has changed
@@ -187,7 +187,24 @@ public class Locker {
         return true
     }
 
-    private let lockTableMutex: Mutex          /// Mutually locks the the critical section.
-    private var lockTable: [ResourceID: Lock]  /// Lock table containing all active locks.
-    private var accessMatrix: LockMatrix       /// Current matrix used to determine access when 2 or more locks exist.
+    private let lockTableMutex: Mutex            /// Mutually locks the the critical section.
+    private var lockTable: [ResourceID: Lock]    /// Lock table containing all active locks.
+    private var accessMatrix: LockConflictMatrix /// Current matrix used to determine access when 2 or more locks exist.
+}
+
+private extension Locker {
+
+    ///
+    /// Returns the max of `LockMode`s in enum order.
+    ///
+    @inline(__always)
+    static func max(_ lhs: LockMode, _ rhs: LockMode?) -> LockMode {
+        guard let rhs = rhs
+            else { return lhs }
+
+        if lhs.rawValue > rhs.rawValue {
+            return lhs
+        }
+        return rhs
+    }
 }

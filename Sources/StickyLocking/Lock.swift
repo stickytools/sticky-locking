@@ -22,13 +22,13 @@ import Foundation
 ///
 internal class Lock {
 
-    init(mode: LockMode) {
+    init(mode: LockMode? = nil) {
         self.mode    = mode
         self.queue   = RequestQueue()
         self.mutex   = Mutex()
     }
 
-    var mode:  LockMode       /// THe mode this lock was originally locked in.
+    var mode:  LockMode?      /// THe mode this lock was originally locked in. Nil means no lock
     var queue: RequestQueue   /// Queue (FIFO) of lock requests for this lock (owners and waiters).
     let mutex: Mutex          /// Mutex for locking while maintaining owners and waiters as well as waiting on the lock with a condition.
 }

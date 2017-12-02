@@ -18,41 +18,19 @@
 import Swift
 
 ///
+/// Protocol which represents a type that can be used as an index into a matrix (multi dimensional array).
+///
+public protocol LockModeType: RawRepresentable {}
+
+///
 /// Lock mode requested.
 ///
-public enum LockMode: Int {
-    ///
-    /// - Important: There should be no gaps in the rawValue of each of these from first to last otherwise allValues below will not function correctly.
-    ///
-    case NL     /// No lock
+public enum LockMode: Int, LockModeType {
+
     case IS     /// Intention Shared
     case IX     /// Intention Exclusive
     case S      /// Shared
     case SIX    /// Shared Intention Exclusive
     case U      /// Used on resources that can be updated. Prevents a common form of deadlock that occurs when multiple sessions are reading, locking, and potentially updating resources later.
     case X      /// Exclusive
-
-    ///
-    /// Returns a list of all enum values as an Array.
-    ///
-    public static var allValues: [LockMode] = {
-        var current = NL.rawValue   /// Must be first case statement in LockMode.
-        return Array(
-            AnyIterator<LockMode> {
-                defer { current += 1 }
-                return LockMode(rawValue: current)
-            }
-        )
-    }()
-
-    ///
-    /// Returns the max of `LockMode`s in enum order.
-    ///
-    @inline(__always)
-    internal static func max(_ lhs: LockMode, _ rhs: LockMode) -> LockMode {
-        if lhs.rawValue > rhs.rawValue {
-            return lhs
-        }
-        return rhs
-    }
 }

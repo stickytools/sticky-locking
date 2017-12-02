@@ -12,11 +12,11 @@ import Dispatch
 class LockRequestTests: XCTestCase {
 
     func testInit() {
-        XCTAssertNotNil(Lock.Request(.NL))
+        XCTAssertNotNil(Lock.Request(.S))
     }
 
     func testInitWithDefaultLockerValue() {
-        XCTAssertEqual(Lock.Request(.NL).requester, Lock.Requester())
+        XCTAssertEqual(Lock.Request(.S).requester, Lock.Requester())
     }
 
     func testInitWithLocker() {
@@ -29,23 +29,23 @@ class LockRequestTests: XCTestCase {
         }
         group.wait()
 
-        XCTAssertEqual(Lock.Request(.NL, requester: locker).requester, locker)
+        XCTAssertEqual(Lock.Request(.S, requester: locker).requester, locker)
     }
 
     func testStatusDefaultValue() {
-        XCTAssertEqual(Lock.Request(.NL).status, .requested)
+        XCTAssertEqual(Lock.Request(.S).status, .requested)
     }
 
     func testCountDefaultValue() {
-        XCTAssertEqual(Lock.Request(.NL).count, 1)
+        XCTAssertEqual(Lock.Request(.S).count, 1)
     }
 
     func testMode() {
-        XCTAssertEqual(Lock.Request(.NL).mode, .NL)
+        XCTAssertEqual(Lock.Request(.S).mode, .S)
     }
 
     func testCountIncrementAssign() {
-        let input = Lock.Request(.NL)
+        let input = Lock.Request(.S)
 
         input.count += 1
         XCTAssertEqual(input.count, 2)

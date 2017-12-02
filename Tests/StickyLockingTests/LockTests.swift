@@ -24,11 +24,11 @@ import XCTest
 class LockTests: XCTestCase {
 
     func testInit() {
-        XCTAssertNotNil(Lock(mode: .NL))
+        XCTAssertNotNil(Lock(mode: .IS))
     }
 
     func testMode() {
-        XCTAssertEqual(Lock(mode: .NL).mode, .NL)
+        XCTAssertEqual(Lock(mode: .IS).mode, .IS)
     }
     
 }
