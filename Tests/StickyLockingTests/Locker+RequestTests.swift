@@ -1,5 +1,5 @@
 ///
-///  Lock+RequestTests.swift
+///  Locker+RequestTests.swift
 //  StickyLockingTests
 //
 ///  Created by Tony Stone on 11/24/17.
@@ -9,43 +9,43 @@ import Dispatch
 
 @testable import StickyLocking
 
-class LockRequestTests: XCTestCase {
+class LockerRequestTests: XCTestCase {
 
     func testInit() {
-        XCTAssertNotNil(Lock.Request(.S))
+        XCTAssertNotNil(Locker<LockMode>.Request(.S))
     }
 
     func testInitWithDefaultLockerValue() {
-        XCTAssertEqual(Lock.Request(.S).requester, Lock.Requester())
+        XCTAssertEqual(Locker<LockMode>.Request(.S).requester, Locker<LockMode>.Requester())
     }
 
     func testInitWithLocker() {
         let group = DispatchGroup()
 
         /// Force new thread to get another requester instance.
-        var locker = Lock.Requester()
+        var locker = Locker<LockMode>.Requester()
         DispatchQueue.global().async(group: group) {
-            locker = Lock.Requester()
+            locker = Locker.Requester()
         }
         group.wait()
 
-        XCTAssertEqual(Lock.Request(.S, requester: locker).requester, locker)
+        XCTAssertEqual(Locker<LockMode>.Request(.S, requester: locker).requester, locker)
     }
 
     func testStatusDefaultValue() {
-        XCTAssertEqual(Lock.Request(.S).status, .requested)
+        XCTAssertEqual(Locker<LockMode>.Request(.S).status, .requested)
     }
 
     func testCountDefaultValue() {
-        XCTAssertEqual(Lock.Request(.S).count, 1)
+        XCTAssertEqual(Locker<LockMode>.Request(.S).count, 1)
     }
 
     func testMode() {
-        XCTAssertEqual(Lock.Request(.S).mode, .S)
+        XCTAssertEqual(Locker<LockMode>.Request(.S).mode, .S)
     }
 
     func testCountIncrementAssign() {
-        let input = Lock.Request(.S)
+        let input = Locker<LockMode>.Request(.S)
 
         input.count += 1
         XCTAssertEqual(input.count, 2)
@@ -56,7 +56,7 @@ class LockRequestTests: XCTestCase {
         let group = DispatchGroup()
 
         let mutex = Mutex()
-        let request = Lock.Request(.S)
+        let request = Locker<LockMode>.Request(.S)
 
         DispatchQueue.global().async(group: group) {
             mutex.lock()

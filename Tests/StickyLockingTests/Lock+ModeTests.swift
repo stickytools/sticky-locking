@@ -1,5 +1,5 @@
 ///
-///  LockTests.swift
+///  Lock+ModeTests.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -15,20 +15,31 @@
 ///  See the License for the specific language governing permissions and
 ///  limitations under the License.
 ///
-///  Created by Tony Stone on 11/24/17.
+///  Created by Tony Stone on 12/2/17.
 ///
 import XCTest
 
-@testable import StickyLocking
+import StickyLocking
 
-class LockTests: XCTestCase {
+class Lock_ModeTests: XCTestCase {
 
     func testInit() {
-        XCTAssertNotNil(Lock(mode: .IS))
+        XCTAssertEqual(Lock.Mode(integerLiteral: 10).value, 10)
     }
 
-    func testMode() {
-        XCTAssertEqual(Lock(mode: .IS).mode, .IS)
+    func testEqualTrue() {
+        XCTAssertTrue(Lock.Mode(integerLiteral: 20) == Lock.Mode(integerLiteral: 20))
     }
-    
+
+    func testEqualFalse() {
+        XCTAssertFalse(Lock.Mode(integerLiteral: 20) == Lock.Mode(integerLiteral: 10))
+    }
+
+    func testDescription() {
+        XCTAssertEqual(Lock.Mode(integerLiteral: 10).description, "10")
+    }
+
+    func testDebugDescription() {
+        XCTAssertEqual(Lock.Mode(integerLiteral: 10).debugDescription, "10")
+    }
 }

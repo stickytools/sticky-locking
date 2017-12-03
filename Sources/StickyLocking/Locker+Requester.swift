@@ -26,7 +26,7 @@ import Foundation
 ///
 /// Lock auxiliary structures.
 ///
-internal extension Lock {
+internal extension Locker {
 
     ///
     /// Class which identifies the requester that is locking or unlocking the lock.
@@ -47,7 +47,7 @@ internal extension Lock {
 ///
 /// `CustomStringConvertible` and `CustomDebugStringConvertible` conformance.
 ///
-extension Lock.Requester: CustomStringConvertible, CustomDebugStringConvertible {
+extension Locker.Requester: CustomStringConvertible, CustomDebugStringConvertible {
 
     var description: String {
         return "\(self.thread)"

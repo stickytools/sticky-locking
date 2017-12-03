@@ -1,5 +1,5 @@
 ///
-///  Lock+RequesterTests.swift
+///  Locker+RequesterTests.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -22,40 +22,40 @@ import Dispatch
 
 @testable import StickyLocking
 
-class LockRequesterTests: XCTestCase {
+class LockerRequesterTests: XCTestCase {
 
     func testInit() {
         let thread: pthread_t = pthread_self()
 
-        XCTAssertEqual(Lock.Requester().description, "\(thread)")
+        XCTAssertEqual(Locker<LockMode>.Requester().description, "\(thread)")
     }
 
     func testEqualTrue() {
-        XCTAssertEqual(Lock.Requester(), Lock.Requester())
+        XCTAssertEqual(Locker<LockMode>.Requester(), Locker.Requester())
     }
 
     func testEqualFalse() {
         let group = DispatchGroup()
 
         /// Force new thread to get another requester instance.
-        var other = Lock.Requester()
+        var other = Locker<LockMode>.Requester()
         DispatchQueue.global().async(group: group) {
-            other = Lock.Requester()
+            other = Locker<LockMode>.Requester()
         }
         group.wait()
 
-        XCTAssertNotEqual(Lock.Requester(), other)
+        XCTAssertNotEqual(Locker.Requester(), other)
     }
 
     func testDescription() {
         let thread: pthread_t = pthread_self()
 
-        XCTAssertEqual(Lock.Requester().description, "\(thread)")
+        XCTAssertEqual(Locker<LockMode>.Requester().description, "\(thread)")
     }
 
     func testDebugDescription() {
         let thread: pthread_t = pthread_self()
 
-        XCTAssertEqual(Lock.Requester().debugDescription, "Locker(\(thread))")
+        XCTAssertEqual(Locker<LockMode>.Requester().debugDescription, "Locker(\(thread))")
     }
 }

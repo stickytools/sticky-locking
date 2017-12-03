@@ -28,7 +28,7 @@ import Foundation
 ///
 /// The `Locker` class is an implementation of a high concurrency hierarchical lock manager.
 ///
-public class Locker {
+public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.Mode {
 
     ///
     /// Result of requesting a lock on an resource.
@@ -42,27 +42,27 @@ public class Locker {
     ///
     /// Initialize `self`
     ///
-    public init(accessMatrix: LockConflictMatrix = LockConflictMatrix.default) {
+    public init(conflictMatrix: Lock.ConflictMatrix<LockMode>) {
         self.lockTable       = [:]
         self.lockTableMutex  = Mutex(.normal)
-        self.accessMatrix    = accessMatrix
+        self.conflictMatrix = conflictMatrix
     }
 
     ///
     /// Lock a resource in `mode`.
     ///
-    public func lock(_ resource: ResourceID, mode: LockMode, timeout: WaitTime = WaitTime.distantFuture) -> LockResult {
-        let requester = Lock.Requester()
+    public func lock(_ resource: Lock.ResourceID, mode: LockMode, timeout: WaitTime = WaitTime.distantFuture) -> LockResult {
+        let requester = Requester()
 
         self.lockTableMutex.lock()
 
         /// Check for an existing lock entry.
         guard let lock = self.lockTable[resource] else {
             /// If no lock entry, there is no owner so just grant the request.
-            let lock = Lock(mode: mode)
+            let lock = LockEntry(mode: mode)
             self.lockTable[resource] = lock
 
-            lock.queue.add(Lock.Request(mode, status: .granted, requester: requester))
+            lock.queue.add(Request(mode, status: .granted, requester: requester))
 
             self.lockTableMutex.unlock()
             return .granted
@@ -83,12 +83,12 @@ public class Locker {
         }
 
         /// It's a new request
-        let request = Lock.Request(mode, requester: requester)
+        let request = Request(mode, requester: requester)
         lock.queue.add(request)
 
         /// We don't own the lock currently so if there are no waiters and our lock request mode is compatible, we can grant the lock.
         if !lock.queue.contains(status: .waiting) &&
-           self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {
+           self.conflictMatrix.compatible(requested: request.mode, current: lock.mode) {
 
             /// Upgrade the current lock mode.
             lock.mode = Locker.max(request.mode, lock.mode)
@@ -121,8 +121,8 @@ public class Locker {
     /// Unlock the resource.
     ///
     @discardableResult
-    public func unlock(_ resource: ResourceID) -> Bool {
-        let requester = Lock.Requester()
+    public func unlock(_ resource: Lock.ResourceID) -> Bool {
+        let requester = Requester()
 
         self.lockTableMutex.lock()
         defer { self.lockTableMutex.unlock() }
@@ -144,7 +144,7 @@ public class Locker {
             if existing.count > 0 {
                 return true     /// Only need to decrement lock and return.
             } else {
-                lock.queue.remove(request: existing)
+                lock.queue.remove(existing)
                 lock.mode = nil
 
                 if lock.queue.count == 0 {
@@ -167,7 +167,7 @@ public class Locker {
                 lock.mode = Locker.max(request.mode, lock.mode)
 
             } else if request.status == .waiting &&
-                  self.accessMatrix.compatible(requested: request.mode, current: lock.mode) {    /// or if this is a compatible lock with the rest of the lock group.
+                  self.conflictMatrix.compatible(requested: request.mode, current: lock.mode) {    /// or if this is a compatible lock with the rest of the lock group.
                 
                 /// Upgrade the lock mode
                 lock.mode      = Locker.max(request.mode, lock.mode)
@@ -187,12 +187,28 @@ public class Locker {
         return true
     }
 
-    private let lockTableMutex: Mutex            /// Mutually locks the the critical section.
-    private var lockTable: [ResourceID: Lock]    /// Lock table containing all active locks.
-    private var accessMatrix: LockConflictMatrix /// Current matrix used to determine access when 2 or more locks exist.
+    private let lockTableMutex: Mutex                   /// Mutually locks the the critical section.
+    private var lockTable: [Lock.ResourceID: LockEntry]   /// Lock table containing all active locks.
+    private var conflictMatrix: Lock.ConflictMatrix<LockMode>  /// Current matrix used to determine access when 2 or more locks exist.
 }
 
 private extension Locker {
+
+    ///
+    /// Lock value class which represents a granted lock.
+    ///
+    private class LockEntry {
+
+        init(mode: LockMode? = nil) {
+            self.mode    = mode
+            self.queue   = RequestQueue()
+            self.mutex   = Mutex()
+        }
+
+        var mode:  LockMode?            /// The mode this lock was originally locked in. Nil means no lock
+        var queue: RequestQueue  /// Queue (FIFO) of lock requests for this lock (owners and waiters).
+        let mutex: Mutex         /// Mutex for locking while maintaining owners and waiters as well as waiting on the lock with a condition.
+    }
 
     ///
     /// Returns the max of `LockMode`s in enum order.
@@ -202,7 +218,7 @@ private extension Locker {
         guard let rhs = rhs
             else { return lhs }
 
-        if lhs.rawValue > rhs.rawValue {
+        if lhs.rawValue.value > rhs.rawValue.value {
             return lhs
         }
         return rhs

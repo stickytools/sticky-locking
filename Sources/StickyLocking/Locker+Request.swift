@@ -20,7 +20,7 @@ import Swift
 ///
 /// Auxiliary Structures
 ///
-extension Lock {
+internal extension Locker {
 
     ///
     /// Lock Request to record requests in the queue.

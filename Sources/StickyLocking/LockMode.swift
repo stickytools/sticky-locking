@@ -18,14 +18,9 @@
 import Swift
 
 ///
-/// Protocol which represents a type that can be used as an index into a matrix (multi dimensional array).
-///
-public protocol LockModeType: RawRepresentable {}
-
-///
 /// Lock mode requested.
 ///
-public enum LockMode: Int, LockModeType {
+public enum LockMode: Lock.Mode {
 
     case IS     /// Intention Shared
     case IX     /// Intention Exclusive
@@ -33,4 +28,16 @@ public enum LockMode: Int, LockModeType {
     case SIX    /// Shared Intention Exclusive
     case U      /// Used on resources that can be updated. Prevents a common form of deadlock that occurs when multiple sessions are reading, locking, and potentially updating resources later.
     case X      /// Exclusive
+
+    public static let conflictMatrix = Lock.ConflictMatrix<LockMode>(arrayLiteral:
+        [
+            /* Requested       IS,    IX,    S,    SIX,    U,     X   */
+            /* IS        */  [true,  true,  true,  true,  true,  false],
+            /* IX        */  [true,  true,  false, false, false, false],
+            /* S         */  [true,  false, true,  false, true,  false],
+            /* SIX       */  [true,  false, false, false, false, false],
+            /* U         */  [true,  false, true,  false, false, false],
+            /* X         */  [false, false, false, false, false, false]
+        ]
+    )
 }

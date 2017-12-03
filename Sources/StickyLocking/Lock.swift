@@ -18,17 +18,135 @@
 import Foundation
 
 ///
-/// Lock value class which represents a granted lock.
+/// Lock namespace
 ///
-internal class Lock {
+public enum Lock {
 
-    init(mode: LockMode? = nil) {
-        self.mode    = mode
-        self.queue   = RequestQueue()
-        self.mutex   = Mutex()
+    ///
+    /// Resource ID to lock.
+    ///
+    public struct ResourceID: Hashable {
+
+        public init(identifier: String) {
+            self.identifier = identifier
+            self.hashValue = self.identifier.hashValue
+        }
+
+        public static func ==(lhs: ResourceID, rhs: ResourceID) -> Bool {
+            return lhs.identifier == rhs.identifier
+        }
+
+        public var hashValue: Int
+        private let identifier: String
     }
 
-    var mode:  LockMode?      /// THe mode this lock was originally locked in. Nil means no lock
-    var queue: RequestQueue   /// Queue (FIFO) of lock requests for this lock (owners and waiters).
-    let mutex: Mutex          /// Mutex for locking while maintaining owners and waiters as well as waiting on the lock with a condition.
+    ///
+    /// Type which defines the modes available to lock a resource in.
+    ///
+    public struct Mode: ExpressibleByIntegerLiteral, Equatable {
+
+        public init(integerLiteral value: Int) {
+            self.value = value
+        }
+        public static func == (lhs: Mode, rhs: Mode) -> Bool {
+            return lhs.value == rhs.value
+        }
+        public var value: Int
+    }
+
+    ///
+    /// A square matrix indexed by LockMode's holding a `Bool` indicating conflict or no conflict of the intersection fo the modes.
+    ///
+    public class ConflictMatrix<T: RawRepresentable> where T.RawValue == Lock.Mode {
+
+        public init(arrayLiteral elements: [[Bool]]) {
+            assert( elements.reduce(0, {  $0 + ($1.count == elements.count ? 1 : 0)  }) == elements.count, "arrayLiteral must be equal rows and columns.")
+
+            self.matrix = elements
+        }
+
+        ///
+        /// Returns whether the `requested` mode is compatible with the `current` mode.
+        ///
+        /// - Parameters:
+        ///     - requested: the requested mode in the matrix expressed as a LockMode value.
+        ///     - current: the current mode in the matrix expressed as a LockMode value.
+        ///
+        @inline(__always)
+        internal func compatible(requested: T, current: T?) -> Bool {
+            if let current = current {
+                return matrix[requested.rawValue.value][current.rawValue.value]
+            }
+            return true
+        }
+
+        private let matrix: [[Bool]]
+    }
+}
+
+///
+/// `CustomStringConvertible` and `CustomDebugStringConvertible` conformance.
+///
+extension Lock.ResourceID: CustomStringConvertible, CustomDebugStringConvertible  {
+
+    public var description: String {
+        return "\"\(self.identifier)\""
+    }
+
+    public var debugDescription: String {
+        return "Lock.ResourceID(hashValue: \(self.hashValue), identifier: \"\(self.identifier)\")"
+    }
+}
+
+///
+/// Lock.Mode CustomStringConvertible and CustomDebugStringConvertible conformance.
+///
+extension Lock.Mode: CustomStringConvertible, CustomDebugStringConvertible {
+    
+    public var description: String {
+        return "\(self.value)"
+    }
+
+    public var debugDescription: String {
+        return description
+    }
+}
+
+///
+/// Lock.ConflictMatrix CustomStringConvertible and CustomDebugStringConvertible conformance.
+///
+extension Lock.ConflictMatrix: CustomStringConvertible, CustomDebugStringConvertible {
+
+    public var description: String {
+        return StickyLocking.description(matrix: self.matrix)
+    }
+
+    public var debugDescription: String {
+        return self.description
+    }
+}
+
+private func description<T>(matrix: [[T]]) -> String {
+    let count = matrix.count
+    var string = "["
+
+    for row in 0..<count {
+        if row > 0 { string += " " }
+        string += "["
+
+        var first = true
+        var lastCount = 0
+        for col in 0..<count {
+            if !first { string += ", " + String(repeatElement(" ", count: 5 - lastCount)) }
+
+            let elementString = "\(matrix[row][col])"
+            string += elementString
+
+            first = false; lastCount = elementString.count
+        }
+        string += "]"
+        if row < count - 1 { string += ",\n" }
+    }
+    string += "]"
+    return string
 }

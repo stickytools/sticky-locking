@@ -19,7 +19,7 @@
 ///
 import Swift
 
-extension Lock {
+internal extension Locker {
 
     ///
     /// FIFO queue of Requests stored as a linked list.
@@ -40,7 +40,7 @@ extension Lock {
         /// Are there any entries with the status in the queue
         ///
         @inline(__always)
-        func contains(status: Lock.Request.Status) -> Bool {
+        func contains(status: Request.Status) -> Bool {
             return storage.contains(where: { $0.status == status })
         }
 
@@ -57,16 +57,6 @@ extension Lock {
         }
 
         ///
-        /// Remove `request` from queue.
-        ///
-        @inline(__always)
-        func remove(request: Request) {
-            guard let index = storage.index(of: request)
-                else { return }
-            storage.remove(at: index)
-        }
-
-        ///
         /// Add a value onto the end of the queue.
         ///
         @inline(__always)
@@ -74,9 +64,18 @@ extension Lock {
             storage.append(request)
         }
 
+        ///
+        /// Remove `request` from queue.
+        ///
+        @inline(__always)
+        func remove(_ request: Request) {
+            guard let index = storage.index(of: request)
+                else { return }
+            storage.remove(at: index)
+        }
 
         // MARK: Sequence Conformance
-        func makeIterator() -> Lock.RequestQueue.Iterator {
+        func makeIterator() -> RequestQueue.Iterator {
             return storage.makeIterator()
         }
 

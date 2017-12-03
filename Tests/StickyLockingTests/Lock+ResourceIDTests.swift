@@ -21,33 +21,33 @@ import XCTest
 
 @testable import StickyLocking
 
-class ResourceIDTests: XCTestCase {
+class LockResourceIDTests: XCTestCase {
 
     func testInit() {
-        XCTAssertNotNil(ResourceID(identifier: "test id"))
+        XCTAssertNotNil(Lock.ResourceID(identifier: "test id"))
     }
 
     func testEqualTrue() {
-        XCTAssertEqual(ResourceID(identifier: "test id"), ResourceID(identifier: "test id"))
+        XCTAssertEqual(Lock.ResourceID(identifier: "test id"), Lock.ResourceID(identifier: "test id"))
     }
 
     func testEqualFalse() {
-        XCTAssertNotEqual(ResourceID(identifier: "test id #1"), ResourceID(identifier: "test id #2"))
+        XCTAssertNotEqual(Lock.ResourceID(identifier: "test id #1"), Lock.ResourceID(identifier: "test id #2"))
     }
 
     func testHashValue() {
         /// Not much of a test at the moment, it does however test if the same value (a) gives the same value consitently.
-        XCTAssertEqual   (ResourceID(identifier: "a").hashValue, ResourceID(identifier: "a").hashValue)
-        XCTAssertNotEqual(ResourceID(identifier: "a").hashValue, ResourceID(identifier: "b").hashValue)
+        XCTAssertEqual   (Lock.ResourceID(identifier: "a").hashValue, Lock.ResourceID(identifier: "a").hashValue)
+        XCTAssertNotEqual(Lock.ResourceID(identifier: "a").hashValue, Lock.ResourceID(identifier: "b").hashValue)
     }
 
     func testDescription() {
-        XCTAssertEqual(ResourceID(identifier: "test id").description, "\"test id\"")
+        XCTAssertEqual(Lock.ResourceID(identifier: "test id").description, "\"test id\"")
     }
 
     func testDebugDescription() {
-        let input = ResourceID(identifier: "test id")
+        let input = Lock.ResourceID(identifier: "test id")
         
-        XCTAssertEqual(input.debugDescription, "ResourceID(hashValue: \(input.hashValue), identifier: \"test id\")")
+        XCTAssertEqual(input.debugDescription, "Lock.ResourceID(hashValue: \(input.hashValue), identifier: \"test id\")")
     }
 }
