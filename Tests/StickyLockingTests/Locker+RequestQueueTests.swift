@@ -18,6 +18,7 @@
 ///  Created by Tony Stone on 12/2/17.
 ///
 import XCTest
+import Dispatch
 
 @testable import StickyLocking
 
