@@ -1,5 +1,5 @@
 ///
-///  Lock+ConflictMatrixTests.swift
+///  Lock+GroupModeMatrixTests.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -15,43 +15,44 @@
 ///  See the License for the specific language governing permissions and
 ///  limitations under the License.
 ///
-///  Created by Tony Stone on 12/2/17.
+///  Created by Tony Stone on 12/12/17.
 ///
 import XCTest
 
 @testable import StickyLocking
 
-class Lock_ConflictMatrixTests: XCTestCase {
+class LockGroupModeMatrixTests: XCTestCase {
 
     enum TestMode: Lock.Mode {
         case S, X
     }
 
-    let matrix = Lock.ConflictMatrix<TestMode>(arrayLiteral: [[true,  false],
-                                                              [false, false]])
+    let matrix = Lock.GroupModeMatrix<TestMode>(arrayLiteral: [[.S, .X],
+                                                                [.X, .X]])
 
     func testInitAndCompatible() {
 
         /// S
-        XCTAssertEqual(matrix.compatible(requested: .S, current: .S), true)
-        XCTAssertEqual(matrix.compatible(requested: .S, current: .X), false)
+        XCTAssertEqual(matrix.convert(requested: .S, current: .S), .S)
+        XCTAssertEqual(matrix.convert(requested: .S, current: .X), .X)
 
         /// X
-        XCTAssertEqual(matrix.compatible(requested: .X, current: .S), false)
-        XCTAssertEqual(matrix.compatible(requested: .X, current: .X), false)
+        XCTAssertEqual(matrix.convert(requested: .X, current: .S), .X)
+        XCTAssertEqual(matrix.convert(requested: .X, current: .X), .X)
     }
 
     func testDescription() {
         XCTAssertEqual(matrix.description, """
-                                           [[true,  false],
-                                            [false, false]]
+                                           [[S,     X],
+                                            [X,     X]]
                                            """)
     }
 
     func testDebugDescription() {
         XCTAssertEqual(matrix.debugDescription, """
-                                           [[true,  false],
-                                            [false, false]]
+                                           [[S,     X],
+                                            [X,     X]]
                                            """)
     }
 }
+

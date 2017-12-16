@@ -22,7 +22,7 @@ import Dispatch
 
 @testable import StickyLocking
 
-class Locker_RequestQueueTests: XCTestCase {
+class LockerRequestQueueTests: XCTestCase {
 
     enum TestMode: Lock.Mode {
         case S, X
@@ -50,30 +50,9 @@ class Locker_RequestQueueTests: XCTestCase {
         XCTAssertEqual(queue.count, 0)
     }
 
-    func testContainsTrue() {
-
-        let request = Locker<TestMode>.Request(.S)
-        request.status = .granted
-
-        queue.add(request)
-
-        XCTAssertTrue(queue.contains(status: Locker<TestMode>.Request.Status.granted))
-    }
-
-    func testContainsFalse() {
-
-        let request = Locker<TestMode>.Request(.S)
-        request.status = .granted
-
-        queue.add(request)
-
-        XCTAssertFalse(queue.contains(status: Locker<TestMode>.Request.Status.requested))
-    }
-
     func testFindTrue() {
 
         let request = Locker<TestMode>.Request(.S)
-        request.status = .granted
 
         queue.add(request)
 
@@ -86,7 +65,6 @@ class Locker_RequestQueueTests: XCTestCase {
 
         DispatchQueue.global().async(group: group) {
             let request = Locker<TestMode>.Request(.S)
-            request.status = .granted
 
             self.queue.add(request)
         }
@@ -98,7 +76,6 @@ class Locker_RequestQueueTests: XCTestCase {
     func testAdd() {
 
         let request = Locker<TestMode>.Request(.S)
-        request.status = .granted
 
         queue.add(request)
 
@@ -108,7 +85,6 @@ class Locker_RequestQueueTests: XCTestCase {
     func testRemove() {
 
         let request = Locker<TestMode>.Request(.S)
-        request.status = .granted
 
         queue.add(request)
         queue.remove(request)
@@ -119,8 +95,7 @@ class Locker_RequestQueueTests: XCTestCase {
     func testRemoveNonExisting() {
 
         let request = Locker<TestMode>.Request(.S)
-        request.status = .granted
-
+  
         queue.remove(request)
 
         XCTAssertFalse(queue.contains(request))

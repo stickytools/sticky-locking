@@ -37,11 +37,11 @@ internal extension Locker {
         }
 
         ///
-        /// Are there any entries with the status in the queue
+        /// Is this queue empty.
         ///
-        @inline(__always)
-        func contains(status: Request.Status) -> Bool {
-            return storage.contains(where: { $0.status == status })
+        var isEmpty: Bool {
+            @inline(__always)
+            get { return storage.isEmpty }
         }
 
         ///
@@ -52,7 +52,6 @@ internal extension Locker {
         func find(for requester: Requester) -> Request? {
             guard let index = storage.index(where: { $0.requester == requester })
                 else { return nil }
-
             return storage[index]
         }
 

@@ -30,13 +30,10 @@ internal extension Locker {
         ///
         /// Request status types
         ///
-        enum Status {
-            case requested  /// Initial state, the lock has been requested by a thread.
-            case waiting    /// The request is currently in a wait state waiting for the lock to become free.
-            case granted    /// The request has been granted the requested lock in the requested mode.
-            case denied     /// The request has been denied.
-            case timeout    /// The request timed out waiting for the lock to become free.
-            case deadlock   /// A deadlock was detected and the lock was denied.
+        enum Status: Equatable {
+            case granted            /// The request has been granted the requested lock in the requested mode.
+            case timeout            /// The request timed out and was denied.
+            case denied             /// The request has been denied.
         }
 
         ///
@@ -44,11 +41,11 @@ internal extension Locker {
         ///
         /// - Note: `requester` will default to the current threads requester if not passed.
         ///
-        init(_ mode: LockMode, status: Status = .requested, requester: Requester = Requester()) {
-            self.mode      = mode
-            self.count     = 1         /// Initial request is the first
-            self.requester = requester
-            self.status    = status
+        init(_ mode: LockMode, requester: Requester = Requester()) {
+            self.mode       = mode
+            self.count      = 1         /// Initial request is the first
+            self.requester  = requester
+            self.waitStatus = nil
             self.condition = Condition()
         }
 
@@ -87,12 +84,24 @@ internal extension Locker {
             return lhs.mode == rhs.mode && lhs.requester == rhs.requester
         }
 
-        let mode: LockMode        /// The requested lock mode.
+        var mode: LockMode        /// The requested lock mode.
         var count: Int            /// The number of times this Requester requested this lock.
 
         let requester: Requester  /// The requester of this lock request.
-        var status: Status        /// the current request status (.waiting, .granted, etc).
+        var waitStatus: Status?   /// the current request status (.waiting, .granted, etc).
 
         private let condition: Condition    /// Condition variable to allow waiting until condition is signaled.
+    }
+}
+
+extension Locker.Request: CustomStringConvertible, CustomDebugStringConvertible {
+
+    public var description: String {
+        let mode = "\(self.mode)"
+        return "(.\(mode), count: \(self.count), requester: \(self.requester))"
+    }
+
+    public var debugDescription: String {
+        return self.description
     }
 }

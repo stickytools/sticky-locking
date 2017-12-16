@@ -25,9 +25,9 @@ import StickyLocking
 ///
 /// `Locker` Tests
 ///
-class LockerUnrestrictedConflictMatrix: XCTestCase {
+class LockerUnrestrictedConflictMatrixTests: XCTestCase {
 
-    let lockManager = Locker(conflictMatrix: Lock.ConflictMatrix<LockMode>(arrayLiteral:
+    let locker = Locker(conflictMatrix: Lock.ConflictMatrix<LockMode>(arrayLiteral:
         [
             /* Requested       IS,    IX,    S,    SIX,    U,     X   */
             /* IS        */  [true,  true,  true,  true,  true,  true],
@@ -37,25 +37,24 @@ class LockerUnrestrictedConflictMatrix: XCTestCase {
             /* U         */  [true,  true,  true,  true,  true,  true],
             /* X         */  [true,  true,  true,  true,  true,  true]
         ]
-    ))
-
+    ), groupModeMatrix: LockMode.groupModeMatrix)
 
     func testLockWhenExistingLock() throws {
         let input = Lock.ResourceID(identifier: "database")
 
         let group = DispatchGroup()
 
-        XCTAssertEqual(self.lockManager.lock(input, mode: .S), .granted)
+        XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
 
         DispatchQueue.global().async(group: group) {
 
             /// With this matrix S and X are compatible so these should succeed
-            XCTAssertEqual(self.lockManager.lock(input, mode: .X, timeout: .now() + 0.1), .granted)
-            XCTAssertEqual(self.lockManager.unlock(input), true)
+            XCTAssertEqual(self.locker.lock(input, mode: .X, timeout: .now() + 0.1), .granted)
+            XCTAssertEqual(self.locker.unlock(input), true)
         }
         group.wait()
 
         /// Cleanup
-        XCTAssertEqual(self.lockManager.unlock(input), true)
+        XCTAssertEqual(self.locker.unlock(input), true)
     }
 }

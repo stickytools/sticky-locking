@@ -40,4 +40,16 @@ public enum LockMode: Lock.Mode {
             /* X         */  [false, false, false, false, false, false]
         ]
     )
+
+    public static let groupModeMatrix = Lock.GroupModeMatrix<LockMode>(arrayLiteral:
+        [
+            /* Requested       IS,   IX,   S,    SIX,  U,    X  */
+            /* IS        */  [.IS,  .IX,  .S,   .SIX, .U,   .X],
+            /* IX        */  [.IX,  .IX,  .SIX, .SIX, .X,   .X],
+            /* S         */  [.S,   .SIX, .S,   .SIX, .U,   .X],
+            /* SIX       */  [.SIX, .SIX, .SIX, .SIX, .SIX, .X],
+            /* U         */  [.U,   .X,   .U,   .SIX, .U,   .X],
+            /* X         */  [.X,   .X,   .X,   .X,   .X,   .X]
+        ]
+    )
 }

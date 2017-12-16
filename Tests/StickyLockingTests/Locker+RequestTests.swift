@@ -33,7 +33,7 @@ class LockerRequestTests: XCTestCase {
     }
 
     func testStatusDefaultValue() {
-        XCTAssertEqual(Locker<LockMode>.Request(.S).status, .requested)
+        XCTAssertEqual(Locker<LockMode>.Request(.S).waitStatus, nil)
     }
 
     func testCountDefaultValue() {
@@ -75,4 +75,11 @@ class LockerRequestTests: XCTestCase {
         XCTAssertEqual(group.wait(timeout: .now() + 0.1), .success)
     }
 
+    func testDescription() {
+        XCTAssertNotNil(Locker<LockMode>.Request(.S).description.range(of: "(.S, count: 1, requester: .*)", options: [.regularExpression]))
+    }
+
+    func testDebugDescription() {
+        XCTAssertNotNil(Locker<LockMode>.Request(.S).debugDescription.range(of: "(.S, count: 1, requester: .*)", options: [.regularExpression]))
+    }
 }
