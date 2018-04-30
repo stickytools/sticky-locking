@@ -27,20 +27,20 @@ class LockerRequesterTests: XCTestCase {
     func testInit() {
         let thread: pthread_t = pthread_self()
 
-        XCTAssertEqual(Locker<LockMode>.Requester().description, "\(thread)")
+        XCTAssertEqual(Locker<ExtendedLockMode>.Requester().description, "Thread(\(thread))")
     }
 
     func testEqualTrue() {
-        XCTAssertEqual(Locker<LockMode>.Requester(), Locker.Requester())
+        XCTAssertEqual(Locker<ExtendedLockMode>.Requester(), Locker.Requester())
     }
 
     func testEqualFalse() {
         let group = DispatchGroup()
 
         /// Force new thread to get another requester instance.
-        var other = Locker<LockMode>.Requester()
+        var other = Locker<ExtendedLockMode>.Requester()
         DispatchQueue.global().async(group: group) {
-            other = Locker<LockMode>.Requester()
+            other = Locker<ExtendedLockMode>.Requester()
         }
         group.wait()
 
@@ -50,12 +50,12 @@ class LockerRequesterTests: XCTestCase {
     func testDescription() {
         let thread: pthread_t = pthread_self()
 
-        XCTAssertEqual(Locker<LockMode>.Requester().description, "\(thread)")
+        XCTAssertEqual(Locker<ExtendedLockMode>.Requester().description, "Thread(\(thread))")
     }
 
     func testDebugDescription() {
         let thread: pthread_t = pthread_self()
 
-        XCTAssertEqual(Locker<LockMode>.Requester().debugDescription, "Locker(\(thread))")
+        XCTAssertEqual(Locker<ExtendedLockMode>.Requester().debugDescription, "Locker(Thread(\(thread)))")
     }
 }

@@ -41,7 +41,8 @@ public struct WaitTime: Equatable {
     ///
     /// Maximum time wait can wait.
     ///
-    public static let distantFuture = WaitTime(rawValue: timespec(tv_sec: time_t.max, tv_nsec: 0))
+    public static let distantFuture: WaitTime
+            = WaitTime(rawValue: timespec(tv_sec: time_t.max, tv_nsec: 0))
 
     ///
     /// Add a time interval in seconds to `time`.

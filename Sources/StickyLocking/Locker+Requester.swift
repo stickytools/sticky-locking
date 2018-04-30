@@ -50,7 +50,7 @@ internal extension Locker {
 extension Locker.Requester: CustomStringConvertible, CustomDebugStringConvertible {
 
     var description: String {
-        return "\(self.thread)"
+        return "Thread(\(self.thread))"
     }
     var debugDescription: String {
         return "Locker(\(self.description))"

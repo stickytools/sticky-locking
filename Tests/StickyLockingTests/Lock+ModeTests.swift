@@ -24,22 +24,22 @@ import StickyLocking
 class Lock_ModeTests: XCTestCase {
 
     func testInit() {
-        XCTAssertEqual(Lock.Mode(integerLiteral: 10).value, 10)
+        XCTAssertEqual(LockMode(integerLiteral: 10).value, 10)
     }
 
     func testEqualTrue() {
-        XCTAssertTrue(Lock.Mode(integerLiteral: 20) == Lock.Mode(integerLiteral: 20))
+        XCTAssertTrue(LockMode(integerLiteral: 20) == LockMode(integerLiteral: 20))
     }
 
     func testEqualFalse() {
-        XCTAssertFalse(Lock.Mode(integerLiteral: 20) == Lock.Mode(integerLiteral: 10))
+        XCTAssertFalse(LockMode(integerLiteral: 20) == LockMode(integerLiteral: 10))
     }
 
     func testDescription() {
-        XCTAssertEqual(Lock.Mode(integerLiteral: 10).description, "10")
+        XCTAssertEqual(LockMode(integerLiteral: 10).description, "10")
     }
 
     func testDebugDescription() {
-        XCTAssertEqual(Lock.Mode(integerLiteral: 10).debugDescription, "10")
+        XCTAssertEqual(LockMode(integerLiteral: 10).debugDescription, "10")
     }
 }

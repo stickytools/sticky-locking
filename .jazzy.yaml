@@ -1,0 +1,43 @@
+module: StickyLocking
+author: Tony Stone
+author_url: http://github.com/stickytools
+github_url: http://github.com/stickytools/sticky-locking
+readme: ./README.md
+exclude:
+  - "Tests/**/*.swift"
+  - "Sources/StickyLocking/Locker+Request.swift"
+  - "Sources/StickyLocking/Locker+Requester.swift"
+  - "Sources/StickyLocking/Locker+RequestQueue.swift"
+
+xcodebuild_arguments: [clean,build,-project,StickyLocking.xcodeproj,-scheme,StickyLocking-Package]
+
+swift_version: 4.0.3
+
+theme: apple
+
+documentation: Documentation/Sections/*.md
+abstract: Documentation/Abstracts/*.md
+
+output: Documentation/html
+
+custom_categories:
+  - name: Hierarchical Locker
+    children:
+    - Resources & Hashing
+    - Defining Locker Behavior
+    - Built-in Lock Modes
+
+  - name: Locker Reference
+    children:
+    - Locker
+    - LockMode
+    - CompatibilityMatrix
+    - GroupModeMatrix
+    - RequestStatus
+    - SharedExclusiveLockMode
+    - ExtendedLockMode
+
+  - name: Mutex & Conditions
+    children:
+    - Mutex
+    - Condition

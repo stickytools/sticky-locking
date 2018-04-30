@@ -1,5 +1,5 @@
 ///
-///  LockMode.swift
+///  Lock.swift
 ///
 ///  Licensed under the Apache License, Version 2.0 (the "License");
 ///  you may not use this file except in compliance with the License.
@@ -13,43 +13,50 @@
 ///  See the License for the specific language governing permissions and
 ///  limitations under the License.
 ///
-///  Created by Tony Stone on 11/16/17.
+///  Created by Tony Stone on 11/20/17.
 ///
-import Swift
+import Foundation
 
 ///
-/// Lock mode requested.
+/// Type which defines the modes available to lock a resource in.
 ///
-public enum LockMode: Lock.Mode {
+/// You may define your own LockModes for any type of locking scenario you require.
+///
+/// Here is an example of a very simple lock Mode definition which defines a shared mode and an exclusive mode.
+///
+///     enum MyLockMode: LockMode {
+///         case shared
+///         case exclusive
+///     }
+///
+/// - Note: If you define your own `LockMode`, you must also define a `CompatibilityMatrix` and `GroupModeMatrix` which determines the locker's behaviour for each `LockMode` defined.
+///
+/// - SeeAlso:
+///     `CompatibilityMatrix` for information on how to define a compatibility matrix.
+/// - SeeAlso:
+///     `GroupModeMatrix` for information on how to define a group mode matrix.
+///
+public struct LockMode: ExpressibleByIntegerLiteral, Equatable {
 
-    case IS     /// Intention Shared
-    case IX     /// Intention Exclusive
-    case S      /// Shared
-    case SIX    /// Shared Intention Exclusive
-    case U      /// Used on resources that can be updated. Prevents a common form of deadlock that occurs when multiple sessions are reading, locking, and potentially updating resources later.
-    case X      /// Exclusive
+    public init(integerLiteral value: Int) {
+        self.value = value
+    }
+    public static func == (lhs: LockMode, rhs: LockMode) -> Bool {
+        return lhs.value == rhs.value
+    }
+    public var value: Int
+}
 
-    public static let conflictMatrix = Lock.ConflictMatrix<LockMode>(arrayLiteral:
-        [
-            /* Requested       IS,    IX,    S,    SIX,    U,     X   */
-            /* IS        */  [true,  true,  true,  true,  true,  false],
-            /* IX        */  [true,  true,  false, false, false, false],
-            /* S         */  [true,  false, true,  false, true,  false],
-            /* SIX       */  [true,  false, false, false, false, false],
-            /* U         */  [true,  false, true,  false, false, false],
-            /* X         */  [false, false, false, false, false, false]
-        ]
-    )
+///
+/// LockMode CustomStringConvertible and CustomDebugStringConvertible conformance.
+///
+extension LockMode: CustomStringConvertible, CustomDebugStringConvertible {
 
-    public static let groupModeMatrix = Lock.GroupModeMatrix<LockMode>(arrayLiteral:
-        [
-            /* Requested       IS,   IX,   S,    SIX,  U,    X  */
-            /* IS        */  [.IS,  .IX,  .S,   .SIX, .U,   .X],
-            /* IX        */  [.IX,  .IX,  .SIX, .SIX, .X,   .X],
-            /* S         */  [.S,   .SIX, .S,   .SIX, .U,   .X],
-            /* SIX       */  [.SIX, .SIX, .SIX, .SIX, .SIX, .X],
-            /* U         */  [.U,   .X,   .U,   .SIX, .U,   .X],
-            /* X         */  [.X,   .X,   .X,   .X,   .X,   .X]
-        ]
-    )
+    public var description: String {
+        return "\(self.value)"
+    }
+
+    public var debugDescription: String {
+        return description
+    }
 }

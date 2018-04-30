@@ -26,26 +26,29 @@
 ///
 /// Mutually Exclusive Lock (Mutex) implementation.
 ///
-internal class Mutex {
+public class Mutex {
 
     ///
     /// The type of mutex to create.
     ///
-    /// .normal: Lower overhead mutex that does not allow recursion.
-    /// .recursive: Allows recursion but incurs overhead due to having to keep track fo the calling thread.
-    ///
-    enum MutexType { case normal, recursive }
+    public enum MutexType {
+        /// Lower overhead mutex that does not allow recursion.
+        case normal
+
+        /// Allows recursion but incurs overhead due to having to keep track fo the calling thread.
+        case recursive
+    }
 
     ///
     /// Initialize `self`
     ///
-    /// - Parameter type: `MutexType` to to create.  Default is normal
+    /// - Parameter type: `MutexType` to to create.  Default is .normal
     ///
     /// - Seealso: `MutexType`
     ///
-    /// - Note: Care must be taken to ensure matching (lock|tryLock)/unlock pairs, otherwise undefined behaviour can occur.
+    /// - Note: Care must be taken to ensure matching (lock | tryLock)/unlock pairs, otherwise undefined behaviour can occur.
     ///
-    init(_ type: MutexType = .normal)  {
+    public init(_ type: MutexType = .normal)  {
 
         var attributes = pthread_mutexattr_t()
         guard pthread_mutexattr_init(&attributes) == 0 else { fatalError("pthread_mutexattr_init") }
@@ -61,8 +64,7 @@ internal class Mutex {
     ///
     /// Lock the mutex waiting indefinitely for the lock.
     ///
-    @inline(__always)
-    final func lock() {
+    public final func lock() {
         pthread_mutex_lock(&mutex)
     }
 
@@ -73,16 +75,14 @@ internal class Mutex {
     ///
     /// - Important: When ever tryLock returns `true`, you must have a matching `unlock` call for the try lock.
     ///
-    @inline(__always)
-    final func tryLock() -> Bool {
+    public final func tryLock() -> Bool {
         return pthread_mutex_trylock(&mutex) == 0
     }
 
     ///
     /// Unlock the mutex.
     ///
-    @inline(__always)
-    final func unlock() {
+    public final func unlock() {
         pthread_mutex_unlock(&mutex)
     }
 
@@ -92,21 +92,30 @@ internal class Mutex {
 ///
 /// Condition implementation.
 ///
-internal class Condition {
+public class Condition {
 
     ///
     /// Enumeration of result codes from a wait.
     ///
-    enum WaitResult {
-        case success, timeout, error
+    public enum WaitResult {
+
+        /// The mutex succeeded and was granted.
+        case success
+
+        /// The mutex timed out while trying to acquire it.
+        case timeout
+
+        /// There was an error while trying to acquire the mutex.
+        case error
     }
 
     ///
     /// Initialize `self`
     ///
-    init()  {
+    public init()  {
         guard pthread_cond_init(&condition, nil) == 0 else { fatalError("pthread_cond_init") }
     }
+
     deinit {
         pthread_cond_destroy(&condition)
     }
@@ -114,9 +123,8 @@ internal class Condition {
     ///
     /// Wait on condition represented by `self` re-acquiring the mutex before returning.
     ///
-    @inline(__always)
     @discardableResult
-    final func wait(_ mutex: Mutex) -> WaitResult {
+    public final func wait(_ mutex: Mutex) -> WaitResult {
         switch pthread_cond_wait(&condition, &mutex.mutex) {
         case 0:  return .success
         default: return .error
@@ -126,9 +134,8 @@ internal class Condition {
     ///
     /// Wait on condition represented by `self` re-acquiring the mutex before returning. If timeout is exceeded, return a timeout result.
     ///
-    @inline(__always)
     @discardableResult
-    final func wait(_ mutex: Mutex, timeout: WaitTime) -> WaitResult {
+    public final func wait(_ mutex: Mutex, timeout: WaitTime) -> WaitResult {
         var timeout = timeout
         switch pthread_cond_timedwait(&condition, &mutex.mutex, &timeout.timeSpec) {
         case 0:         return .success
@@ -140,8 +147,7 @@ internal class Condition {
     ///
     /// Signal the waiter, allowing it to re-aquire the mutex and continue.
     ///
-    @inline(__always)
-    final func signal() {
+    public final func signal() {
         pthread_cond_signal(&condition)
     }
 

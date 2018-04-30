@@ -1,0 +1,1 @@
+The following types are available globally.

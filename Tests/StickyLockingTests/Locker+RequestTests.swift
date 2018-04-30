@@ -12,40 +12,40 @@ import Dispatch
 class LockerRequestTests: XCTestCase {
 
     func testInit() {
-        XCTAssertNotNil(Locker<LockMode>.Request(.S))
+        XCTAssertNotNil(Locker<ExtendedLockMode>.Request(.S))
     }
 
     func testInitWithDefaultLockerValue() {
-        XCTAssertEqual(Locker<LockMode>.Request(.S).requester, Locker<LockMode>.Requester())
+        XCTAssertEqual(Locker<ExtendedLockMode>.Request(.S).requester, Locker<ExtendedLockMode>.Requester())
     }
 
     func testInitWithLocker() {
         let group = DispatchGroup()
 
         /// Force new thread to get another requester instance.
-        var locker = Locker<LockMode>.Requester()
+        var locker = Locker<ExtendedLockMode>.Requester()
         DispatchQueue.global().async(group: group) {
             locker = Locker.Requester()
         }
         group.wait()
 
-        XCTAssertEqual(Locker<LockMode>.Request(.S, requester: locker).requester, locker)
+        XCTAssertEqual(Locker<ExtendedLockMode>.Request(.S, requester: locker).requester, locker)
     }
 
     func testStatusDefaultValue() {
-        XCTAssertEqual(Locker<LockMode>.Request(.S).waitStatus, nil)
+        XCTAssertEqual(Locker<ExtendedLockMode>.Request(.S).waitStatus, nil)
     }
 
     func testCountDefaultValue() {
-        XCTAssertEqual(Locker<LockMode>.Request(.S).count, 1)
+        XCTAssertEqual(Locker<ExtendedLockMode>.Request(.S).count, 1)
     }
 
     func testMode() {
-        XCTAssertEqual(Locker<LockMode>.Request(.S).mode, .S)
+        XCTAssertEqual(Locker<ExtendedLockMode>.Request(.S).mode, .S)
     }
 
     func testCountIncrementAssign() {
-        let input = Locker<LockMode>.Request(.S)
+        let input = Locker<ExtendedLockMode>.Request(.S)
 
         input.count += 1
         XCTAssertEqual(input.count, 2)
@@ -56,7 +56,7 @@ class LockerRequestTests: XCTestCase {
         let group = DispatchGroup()
 
         let mutex = Mutex()
-        let request = Locker<LockMode>.Request(.S)
+        let request = Locker<ExtendedLockMode>.Request(.S)
 
         DispatchQueue.global().async(group: group) {
             mutex.lock()
@@ -76,10 +76,10 @@ class LockerRequestTests: XCTestCase {
     }
 
     func testDescription() {
-        XCTAssertNotNil(Locker<LockMode>.Request(.S).description.range(of: "(.S, count: 1, requester: .*)", options: [.regularExpression]))
+        XCTAssertNotNil(Locker<ExtendedLockMode>.Request(.S).description.range(of: "(.*, \\.S)", options: [.regularExpression]))
     }
 
     func testDebugDescription() {
-        XCTAssertNotNil(Locker<LockMode>.Request(.S).debugDescription.range(of: "(.S, count: 1, requester: .*)", options: [.regularExpression]))
+        XCTAssertNotNil(Locker<ExtendedLockMode>.Request(.S).debugDescription.range(of: "(.*, \\.S)", options: [.regularExpression]))
     }
 }

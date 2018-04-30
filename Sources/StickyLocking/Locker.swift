@@ -28,32 +28,34 @@ import Foundation
 ///
 /// The `Locker` class is an implementation of a high concurrency hierarchical lock manager.
 ///
-public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.Mode {
+public class Locker<T: RawRepresentable> where T.RawValue == LockMode {
 
     ///
-    /// Result of requesting a lock on an resource.
+    /// Initialize `self` with the given `CompatibilityMatrix` and `GroupModeMatrix`.
     ///
-    public enum LockResult {
-        case granted
-        case denied
-        case timeout
+    /// - Parameters:
+    ///   - compatibilityMatrix: The `CompatibilityMatrix` to use for determining lock compatibility.
+    ///   - groupModeMatrix: The `GroupModeMatrix` to use when determining the group mode of the granted locks and the group mode of a new request given an existing group mode.
+    ///
+    public init(compatibilityMatrix: CompatibilityMatrix<T>, groupModeMatrix: GroupModeMatrix<T>) {
+        self.lockTable              = [:]
+        self.lockTableMutex         = Mutex(.normal)
+        self.compatibilityMatrix    = compatibilityMatrix
+        self.groupModeMatrix        = groupModeMatrix
     }
 
     ///
-    /// Initialize `self`
+    /// Lock a resource in the given `mode`.
     ///
-    public init(conflictMatrix: Lock.ConflictMatrix<LockMode>, groupModeMatrix: Lock.GroupModeMatrix<LockMode>) {
-        self.lockTable        = [:]
-        self.lockTableMutex   = Mutex(.normal)
-        self.conflictMatrix   = conflictMatrix
-        self.groupModeMatrix = groupModeMatrix
-    }
-
+    /// - Parameters:
+    ///   - resource: The `Hashable` resource to lock.
+    ///   - mode: The `LockMode` to lock the `resource` in.
+    ///   - timeout: An optional timeout period to wait for the lock to be granted before giving up and returning `RequestStatus.timeout`
     ///
-    /// Lock a resource in `mode`.
+    /// - Returns: `RequestStatus.granted` when the lock is granted, `.denied` if the lock can not be granted before the timeout, or `.timeout` if the request could not be granted before the timeout period expired.
     ///
     @discardableResult
-    public func lock(_ resource: Lock.ResourceID, mode: LockMode, timeout: WaitTime = WaitTime.distantFuture) -> LockResult {
+    public func lock<R: Hashable>(_ resource: R, mode: T, timeout: WaitTime = WaitTime.distantFuture) -> RequestStatus {
         let request = Request(mode)
 
         self.lockTableMutex.lock()
@@ -66,13 +68,13 @@ public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.
             self.lockTable[resource] = lock
 
             lock.granted.add(request)
-
-            print("Grant\t\t.\(mode)(.\(lock.groupMode ?? mode))\t-> (resource: \(resource) request: \(request)) no original owner.")   /// TODO: Remove me before production
-
+#if DEBUG
+            print("\(RequestStatus.granted)\t\t.\(mode)(.\(lock.groupMode ?? mode))\t-> (resource: \(resource) request: \(request)) no original owner.")   /// TODO: Remove me before production
+#endif
             self.lockTableMutex.unlock()
             return .granted
         }
-        /// -> Lock Exists <-
+        /// --> Lock Exists <--
 
         /// Crab to the lock mutex, do not unlock the lock table until the lock is locked.
         lock.mutex.lock(); defer { lock.mutex.unlock() }
@@ -80,126 +82,137 @@ public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.
 
         /// The lock is currently owned, do we own this lock?
         if let existing = lock.granted.find(for: request.requester) {
+            ///
+            /// --> The requester owns the existing lock <--
+            ///
 
-            ///
-            /// Existing Lock path.
-            ///
+            /// Is the existing lock the same mode as the requested lock? This condition
+            /// indicates a recursive call which is the requester requesting the same
+            /// lock multiple times.
             if existing.mode == mode {
                 ///
-                /// Recursive call for the same owned lock and mode.
+                /// --> Recursive call for the same owned lock and mode <--
                 ///
                 existing.count += 1 /// Increment the number of locks this owner has
-
-                print("Grant\t\t.\(existing.mode)(.\(lock.groupMode ?? existing.mode))\t-> (resource: \(resource) request: \(existing))") /// TODO: Remove me before production
-
+#if DEBUG
+                print("\(RequestStatus.granted)\t\t.\(existing.mode)(.\(lock.groupMode ?? existing.mode))\t-> (resource: \(resource) request: \(existing))") /// TODO: Remove me before production
+#endif
                 return .granted
             }
 
             ///
-            /// Conversion Request
+            /// --> Conversion Request <---
             ///
-            /// At this point, we own the lock in some mode and the request is not for that same mode so it's a conversion request.
+            /// At this point, we own the lock but the request is not for that same mode so it's a conversion request.
             ///
-            if lock.converting.isEmpty && self.groupModeCompatible(with: request.mode, lock: lock, excluding: existing) {
+
+            /// If no other conversions are waiting and the lock mode is compatible with the existing group mode, we can grant the lock.
+            if lock.converting.isEmpty && self.grantedGroupModeCompatible(with: request.mode, lock: lock, excluding: existing) {
 
                 existing.count += 1 /// Increment the number of locks this owner has
                 existing.mode  = mode
                 lock.groupMode = groupModeMatrix.convert(requested: request.mode, current: lock.groupMode)    /// Upgrade the mode of this lock
-
-                print("Grant^\t\t.\(existing.mode)(.\(lock.groupMode ?? existing.mode))\t-> (resource: \(resource) request: \(existing))") /// TODO: Remove me before production
-
+#if DEBUG
+                print("\(RequestStatus.granted)^\t\t.\(existing.mode)(.\(lock.groupMode ?? existing.mode))\t-> (resource: \(resource) request: \(existing))") /// TODO: Remove me before production
+#endif
                 return .granted
             }
 
-            ///
-            /// Conversion with other waiting conversion requests or other current locks in the queue.
-            ///
-            lock.converting.add(request)
-        } else {
+            /// --> Conversion must wait <---
 
-            /// If we get here there are no existing locks and this is not a conversion so we add the request to the end of the queue.
+            lock.converting.add(request)
+
+        } else {
+            ///
+            /// --> The requester does NOT own the existing lock <--
+            ///
+
             /// We don't own the lock currently so if there are no waiters and our lock request mode is compatible, we can grant the lock.
             if lock.converting.isEmpty && lock.waiting.isEmpty &&
-                self.conflictMatrix.compatible(requested: request.mode, current: lock.groupMode) {
+                self.compatibilityMatrix.compatible(requested: request.mode, current: lock.groupMode) {
 
                 /// Upgrade the current lock mode.
                 lock.groupMode = groupModeMatrix.convert(requested: request.mode, current: lock.groupMode)
 
                 lock.granted.add(request)
-
-                print("Grant\t\t.\(request.mode)(.\(lock.groupMode ?? request.mode))\t-> (resource: \(resource) request: \(request)) lock request is compatible with current lock.") /// TODO: Remove me before production
-
+#if DEBUG
+                print("\(RequestStatus.granted)\t\t.\(request.mode)(.\(lock.groupMode ?? request.mode))\t-> (resource: \(resource) request: \(request)) lock request is compatible with current lock.") /// TODO: Remove me before production
+#endif
                 return .granted
             } else {
+
+                /// --> Request must wait <--
+
                 lock.waiting.add(request)
             }
         }
 
         ///
-        /// -> Wait <-
+        /// --> Begin Wait <--
         ///
         /// At this point, we need to wait so change the request status and wait.
         ///
-        print("Wait\t\t.\(request.mode)\t\t-> (resource: \(resource) request: \(request))") /// TODO: Remove me before production
-
+#if DEBUG
+        print("wait\t\t.\(request.mode)\t\t-> (resource: \(resource) request: \(request))") /// TODO: Remove me before production
+#endif
         while request.waitStatus == nil {    /// Note: the loop protects against **spurious wakeups** because it is the signaler's responsibility to change the status to something other than waiting.
             if request.wait(on: lock.mutex, timeout: timeout) == .timeout {
                 request.waitStatus = .timeout
             }
         }
+        /// --> End Wait <--
 
-        print("\(self.debugDescription(for: request.waitStatus ?? .denied))\t\t.\(request.mode)(.\(lock.groupMode ?? request.mode))\t-> (resource: \(resource) request: \(request))")
-
-        switch request.waitStatus {     /// Translate RequestStatus to LockResult
+#if DEBUG
+        print("\(request.waitStatus ?? .denied)\t\t.\(request.mode)(.\(lock.groupMode ?? request.mode))\t-> (resource: \(resource) request: \(request))")
+#endif
+        switch request.waitStatus {
         case .granted?:
-            return .granted
+            /// no-op
+                break
 
         case .timeout?:
             lock.converting.remove(request)
             lock.waiting.remove(request)
-
-            return .timeout
         default:
             lock.converting.remove(request)
             lock.waiting.remove(request)
-
-            return .denied
         }
+        return request.waitStatus ?? .denied
     }
 
     ///
     /// Unlock the resource.
     ///
+    /// - Parameter resource: The `ResourceID` to unlock.
+    ///
+    /// - Returns: `true` if the resource was unlocked, `false` otherwise.
+    ///
     @discardableResult
-    public func unlock(_ resource: Lock.ResourceID) -> Bool {
+    public func unlock<R: Hashable>(_ resource: R) -> Bool {
         let requester = Requester()
 
         self.lockTableMutex.lock()
 
-        guard let lock = self.lockTable[resource] else {
-            self.lockTableMutex.unlock()
-            return false
-        }
+        guard let lock = self.lockTable[resource],
+              let existing = lock.granted.find(for: requester) else {
+                self.lockTableMutex.unlock()
+                return false
+            }
 
         lock.mutex.lock(); defer { lock.mutex.unlock() }
 
-        ///
-        /// Handle the case where there is an existing lock that is already granted for this requester.
-        ///
-        if let existing = lock.granted.find(for: requester) {
-
-            print("Unlocked\t.\(existing.mode)(.\(lock.groupMode ?? existing.mode))\t-> (resource: \(resource) request: \(existing))") /// TODO: Remove me before production
-
-            existing.count -= 1    /// Decrement the count for this owner.
-
-            if existing.count > 0 {
-                self.lockTableMutex.unlock()
-                return true     /// Only need to decrement lock and return.
-            }
-            /// If the number of times this lock was acquired is zero, we can remove it from the queue.
-            lock.granted.remove(existing)
-            lock.groupMode = nil
+        existing.count -= 1    /// Decrement the count for this owner.
+#if DEBUG
+        print("unlocked\t.\(existing.mode)(.\(lock.groupMode ?? existing.mode))\t-> (resource: \(resource) request: \(existing))") /// TODO: Remove me before production
+#endif
+        /// If the count is greater than zero, this lock is still held and we just exit since we've already decremented the count.
+        if existing.count > 0 {
+            self.lockTableMutex.unlock()
+            return true     /// Only need to decrement lock and return.
         }
+
+        lock.granted.remove(existing)
+        lock.groupMode = nil
 
         /// If the queue count is now zero, we can remove the entire entry because there are no conversions, waiters or lockers.
         if lock.granted.isEmpty && lock.converting.isEmpty && lock.waiting.isEmpty {
@@ -213,21 +226,22 @@ public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.
 
         /// Update the group mode
         for request in lock.granted {
-
             /// If already granted, we need to realigned (possibly downgrade) the group mode of the current lock.
             lock.groupMode = groupModeMatrix.convert(requested: request.mode, current: lock.groupMode)
         }
 
         ///
-        /// -> Handle waiters <-
+        /// Note: Make sure the lockTableMutex is unlocked before handling conversions and waiters below.
         ///
-        /// if there are any waiters, grant the lock to the next one (FIFO order).
+
         ///
-        /// Note: Make sure the lockTableMutex is unlocked by the time you go into this loop.
+        /// -> Handle Conversions <-
+        ///
+        /// If there are any conversions waiting that are compatible, grant the lock to the next one (FIFO order).
         ///
         for request in lock.converting {
             if let existing = lock.granted.find(for: request.requester),
-                self.groupModeCompatible(with: request.mode, lock: lock, excluding: existing) {
+                self.grantedGroupModeCompatible(with: request.mode, lock: lock, excluding: existing) {
 
                 /// Upgrade the lock mode
                 lock.groupMode = groupModeMatrix.convert(requested: request.mode, current: lock.groupMode)
@@ -244,8 +258,13 @@ public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.
             }
         }
 
+        ///
+        /// -> Handle waiters <-
+        ///
+        /// If there are any waiters waiting that are compatible, grant the lock to the next one (FIFO order).
+        ///
         for request in lock.waiting {
-            if self.conflictMatrix.compatible(requested: request.mode, current: lock.groupMode) {
+            if self.compatibilityMatrix.compatible(requested: request.mode, current: lock.groupMode) {
 
                 /// Upgrade the lock mode
                 lock.groupMode = groupModeMatrix.convert(requested: request.mode, current: lock.groupMode)
@@ -262,38 +281,21 @@ public class Locker<LockMode: RawRepresentable> where LockMode.RawValue == Lock.
         return true
     }
 
-    @inline(__always)
-    private func groupModeCompatible(with requestedMode: LockMode, lock: LockEntry, excluding: Request) -> Bool {
-        let groupMode: LockMode? = self.groupMode(excluding: excluding, lock: lock)
+    private let lockTableMutex: Mutex                        /// Mutex for locking the the critical section.
+    private var lockTable: [AnyHashable: LockEntry]          /// Lock table containing all active locks.
+    private var compatibilityMatrix: CompatibilityMatrix<T>  /// Matrix used to determine access when 2 or more locks exist.
+    private var groupModeMatrix: GroupModeMatrix<T>          /// Matrix used when converting a lock (eg S -> X)
+}
 
-        return groupMode == nil ? true : self.conflictMatrix.compatible(requested: requestedMode, current: groupMode)
+extension Locker: CustomStringConvertible, CustomDebugStringConvertible {
+
+    public var description: String {
+        return "Locker(\(lockTable.description))"
     }
 
-    @inline(__always)
-    private func groupMode(excluding: Request, lock: LockEntry) -> LockMode? {
-        var groupMode: LockMode? = nil
-
-        for request in lock.granted {
-            if request != excluding {
-                groupMode = self.groupModeMatrix.convert(requested: request.mode, current: groupMode)
-            }
-        }
-        return groupMode
+    public var debugDescription: String {
+        return self.description
     }
-
-    @inline(__always)
-    private func debugDescription(for status: Request.Status) -> String {
-        switch status {
-        case .granted: return "Grant"
-        case .denied:  return "Denied"
-        case .timeout: return "Timeout"
-        }
-    }
-
-    private let lockTableMutex: Mutex                             /// Mutex for locking the the critical section.
-    private var lockTable: [Lock.ResourceID: LockEntry]           /// Lock table containing all active locks.
-    private var conflictMatrix: Lock.ConflictMatrix<LockMode>     /// Matrix used to determine access when 2 or more locks exist.
-    private var groupModeMatrix: Lock.GroupModeMatrix<LockMode> /// Matrix used when converting a lock (eg S -> X)
 }
 
 private extension Locker {
@@ -301,21 +303,114 @@ private extension Locker {
     ///
     /// Lock value class which represents a granted lock.
     ///
-    private class LockEntry{
+    private class LockEntry: CustomStringConvertible, CustomDebugStringConvertible {
 
-        init(groupMode: LockMode? = nil) {
-            self.groupMode = groupMode
+        var groupMode:  T?
+        var granted:    RequestQueue
+        var converting: RequestQueue
+        var waiting:    RequestQueue
+
+        let mutex: Mutex                /// Mutex for locking while maintaining owners and waiters as well as waiting on the lock with a condition.
+
+        init(groupMode: T? = nil) {
+            self.groupMode  = groupMode
             self.granted    = RequestQueue()
             self.converting = RequestQueue()
             self.waiting    = RequestQueue()
             self.mutex      = Mutex()
         }
 
-        var groupMode:  LockMode?
-        var granted:    RequestQueue
-        var converting: RequestQueue
-        var waiting:    RequestQueue
+        var description: String {
+            let modeString: String
 
-        let mutex: Mutex                /// Mutex for locking while maintaining owners and waiters as well as waiting on the lock with a condition.
+            if let mode = self.groupMode {
+                modeString = "\(mode)"
+            } else {
+                modeString = "nil"
+            }
+
+            return """
+                LockEntry(.\(modeString),\r
+                \t\t     granted: \(self.granted),\r
+                \t\t  converting: \(self.converting),\r
+                \t\t     waiting: \(self.waiting)\r
+                \t\t)
+                """
+        }
+
+        var debugDescription: String {
+            return self.description
+        }
+    }
+
+    ///
+    /// Test whether the requested mode is compatible with the current group mode calculate
+    /// by removing the `excluding` requests mode.
+    ///
+    ///
+    /// - Parameters:
+    ///   - requestedMode: The mode being tested for compatibility with the group.
+    ///   - lock: The lockEntry to perform the test on using the granted group of the entry.
+    ///   - excluding: The `Request` to exclude from the granted group while calculating the granted group mode.
+    ///
+    /// - Returns: Whether the requested mode is compatible with the current granted group mode calculated after removing the `excluding` Request from the granted group.
+    ///
+    @inline(__always)
+    private func grantedGroupModeCompatible(with requestedMode: T, lock: LockEntry, excluding: Request) -> Bool {
+        let groupMode: T? = self.grantedGroupMode(of: lock, excluding: excluding)
+
+        return groupMode == nil ? true : self.compatibilityMatrix.compatible(requested: requestedMode, current: groupMode)
+    }
+
+    ///
+    /// Calculates the **granted** group mode excluding a specific entry. Used to exclude the
+    /// existing mode from the calculation ensuring a mode request can be converted to itself.
+    ///
+    /// - Example: 1 (Multiple existing granted requests)
+    ///
+    ///     Existing Request = R1
+    ///     ```
+    ///     Lock (U)    <- Existing Group Mode
+    ///        |
+    ///        | granted ->  (R1, U) --- (R2, IS) --- (R3, IS)
+    ///                         ^
+    ///                         |
+    ///                     Remove R1
+    ///     ```
+    ///     Calculate the granted Group mode on remaining requests
+    ///     ```
+    ///        IS + IS = IS
+    ///     ```
+    /// - Example: 2 (Only the `excluding` request in the granted queue)
+    ///
+    ///     Existing Request = R1
+    ///     ```
+    ///     Lock (U)    <- Existing Group Mode
+    ///        |
+    ///        | granted ->  (R1, U)
+    ///                         ^
+    ///                         |
+    ///                     Remove R1
+    ///     ```
+    ///     Calculate the granted Group mode on remaining requests
+    ///     ```
+    ///        nil = nil
+    ///     ```
+    /// - Parameters:
+    ///     - lock: The lockEntry to perform the calculartion on using the granted group of the entry.
+    ///     - excluding: The `Request` to exclude from the granted group while calculating the granted group mode.
+    ///
+    /// - Returns: The group mode calculated after removing the `excluding` Request from the granted group or nil if there are no granted requests after removing `excluding`.
+    ///
+    @inline(__always)
+    private func grantedGroupMode(of lock: LockEntry, excluding: Request) -> T? {
+        var groupMode: T? = nil
+
+        for request in lock.granted {
+            if request != excluding {
+                groupMode = self.groupModeMatrix.convert(requested: request.mode, current: groupMode)
+            }
+        }
+        return groupMode
     }
 }

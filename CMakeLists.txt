@@ -62,7 +62,7 @@ add_custom_target(xcode-workspace
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 add_custom_target(documentation
-        DEPENDS generate-source
+        DEPENDS xcode-project generate-source
         COMMAND jazzy --clean
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 

@@ -12,16 +12,15 @@ XCTMain([
    testCase(MutexTests.allTests),
    testCase(ConditionTests.allTests),
    testCase(LockGroupModeMatrixTests.allTests),
-   testCase(LockerUnrestrictedConflictMatrixTests.allTests),
+   testCase(LockerUnrestrictedCompatibilityMatrixTests.allTests),
    testCase(WaitTimeTests.allTests),
    testCase(LockerRequesterTests.allTests),
    testCase(LockerRequestQueueTests.allTests),
+   testCase(LockerSharedExclusiveLockModeTests.allTests),
    testCase(LockerRequestTests.allTests),
-   testCase(LockResourceIDTests.allTests),
-   testCase(Lock_ConflictMatrixTests.allTests),
-   testCase(LockerDefaultLockModeTests.allTests),
-   testCase(LockerSimpleLockModeTests.allTests),
-   testCase(LockModeTests.allTests)
+   testCase(Lock_CompatibilityMatrixTests.allTests),
+   testCase(ExtendedLockModeTests.allTests),
+   testCase(LockerExtendedLockModeTests.allTests)
 ])
 
 extension Lock_ModeTests {
@@ -68,8 +67,8 @@ extension LockGroupModeMatrixTests {
    }
 }
 
-extension LockerUnrestrictedConflictMatrixTests {
-   static var allTests: [(String, (LockerUnrestrictedConflictMatrixTests) -> () throws -> Void)] {
+extension LockerUnrestrictedCompatibilityMatrixTests {
+   static var allTests: [(String, (LockerUnrestrictedCompatibilityMatrixTests) -> () throws -> Void)] {
       return [
                 ("testLockWhenExistingLock", testLockWhenExistingLock)
            ]
@@ -117,6 +116,29 @@ extension LockerRequestQueueTests {
    }
 }
 
+extension LockerSharedExclusiveLockModeTests {
+   static var allTests: [(String, (LockerSharedExclusiveLockModeTests) -> () throws -> Void)] {
+      return [
+                ("testInit", testInit),
+                ("testLockWhenNoOtherLocks", testLockWhenNoOtherLocks),
+                ("testLockWhenExistingLockThatThreadOwns", testLockWhenExistingLockThatThreadOwns),
+                ("testLockWhenExistingLockThatThreadDoesNotOwnButIsCompatible", testLockWhenExistingLockThatThreadDoesNotOwnButIsCompatible),
+                ("testLockWhenExistingIncompatibleLockForcesWait", testLockWhenExistingIncompatibleLockForcesWait),
+                ("testLockWhenExistingIncompatibleLockForcesWaitWithTimeout", testLockWhenExistingIncompatibleLockForcesWaitWithTimeout),
+                ("testLockWhenExistingIncompatibleLockAllowingTimeout", testLockWhenExistingIncompatibleLockAllowingTimeout),
+                ("testLockMultipleResourcesOnSameThread", testLockMultipleResourcesOnSameThread),
+                ("testLock", testLock),
+                ("testLockUnlockCycle", testLockUnlockCycle),
+                ("testLockUnlockCycleMultipleLocks", testLockUnlockCycleMultipleLocks),
+                ("testLockUnlockCycleRecursiveLocks", testLockUnlockCycleRecursiveLocks),
+                ("testLockUnlockCycleMultipleLocksNonConflicting", testLockUnlockCycleMultipleLocksNonConflicting),
+                ("testLockUnlockCycleCompatibleLockMultipleLockers", testLockUnlockCycleCompatibleLockMultipleLockers),
+                ("testUnlockWhenNothingLocked", testUnlockWhenNothingLocked),
+                ("testUnlockWhenLockNotOwnedByRequester", testUnlockWhenLockNotOwnedByRequester)
+           ]
+   }
+}
+
 extension LockerRequestTests {
    static var allTests: [(String, (LockerRequestTests) -> () throws -> Void)] {
       return [
@@ -134,21 +156,8 @@ extension LockerRequestTests {
    }
 }
 
-extension LockResourceIDTests {
-   static var allTests: [(String, (LockResourceIDTests) -> () throws -> Void)] {
-      return [
-                ("testInit", testInit),
-                ("testEqualTrue", testEqualTrue),
-                ("testEqualFalse", testEqualFalse),
-                ("testHashValue", testHashValue),
-                ("testDescription", testDescription),
-                ("testDebugDescription", testDebugDescription)
-           ]
-   }
-}
-
-extension Lock_ConflictMatrixTests {
-   static var allTests: [(String, (Lock_ConflictMatrixTests) -> () throws -> Void)] {
+extension Lock_CompatibilityMatrixTests {
+   static var allTests: [(String, (Lock_CompatibilityMatrixTests) -> () throws -> Void)] {
       return [
                 ("testInitAndCompatible", testInitAndCompatible),
                 ("testDescription", testDescription),
@@ -157,8 +166,19 @@ extension Lock_ConflictMatrixTests {
    }
 }
 
-extension LockerDefaultLockModeTests {
-   static var allTests: [(String, (LockerDefaultLockModeTests) -> () throws -> Void)] {
+extension ExtendedLockModeTests {
+   static var allTests: [(String, (ExtendedLockModeTests) -> () throws -> Void)] {
+      return [
+                ("testInitArrayLiteral", testInitArrayLiteral),
+                ("testDefaultMatrix", testDefaultMatrix),
+                ("testDescription", testDescription),
+                ("testDebugDescription", testDebugDescription)
+           ]
+   }
+}
+
+extension LockerExtendedLockModeTests {
+   static var allTests: [(String, (LockerExtendedLockModeTests) -> () throws -> Void)] {
       return [
                 ("testInit", testInit),
                 ("testLockGrantWhenNoOtherLocks", testLockGrantWhenNoOtherLocks),
@@ -184,40 +204,8 @@ extension LockerDefaultLockModeTests {
                 ("testLockUnlockCycleRecursiveLocks", testLockUnlockCycleRecursiveLocks),
                 ("testLockUnlockCycleMultipleLocksNonConflicting", testLockUnlockCycleMultipleLocksNonConflicting),
                 ("testLockUnlockCycleCompatibleLockMultipleLockers", testLockUnlockCycleCompatibleLockMultipleLockers),
-                ("testUnlockWhenNothingLocked", testUnlockWhenNothingLocked)
-           ]
-   }
-}
-
-extension LockerSimpleLockModeTests {
-   static var allTests: [(String, (LockerSimpleLockModeTests) -> () throws -> Void)] {
-      return [
-                ("testInit", testInit),
-                ("testLockWhenNoOtherLocks", testLockWhenNoOtherLocks),
-                ("testLockWhenExistingLockThatThreadOwns", testLockWhenExistingLockThatThreadOwns),
-                ("testLockWhenExistingLockThatThreadDoesNotOwnButIsCompatible", testLockWhenExistingLockThatThreadDoesNotOwnButIsCompatible),
-                ("testLockWhenExistingIncompatibleLockForcesWait", testLockWhenExistingIncompatibleLockForcesWait),
-                ("testLockWhenExistingIncompatibleLockForcesWaitWithTimeout", testLockWhenExistingIncompatibleLockForcesWaitWithTimeout),
-                ("testLockWhenExistingIncompatibleLockAllowingTimeout", testLockWhenExistingIncompatibleLockAllowingTimeout),
-                ("testLockMultipleResourcesOnSameThread", testLockMultipleResourcesOnSameThread),
-                ("testLock", testLock),
-                ("testLockUnlockCycle", testLockUnlockCycle),
-                ("testLockUnlockCycleMultipleLocks", testLockUnlockCycleMultipleLocks),
-                ("testLockUnlockCycleRecursiveLocks", testLockUnlockCycleRecursiveLocks),
-                ("testLockUnlockCycleMultipleLocksNonConflicting", testLockUnlockCycleMultipleLocksNonConflicting),
-                ("testLockUnlockCycleCompatibleLockMultipleLockers", testLockUnlockCycleCompatibleLockMultipleLockers),
-                ("testUnlockWhenNothingLocked", testUnlockWhenNothingLocked)
-           ]
-   }
-}
-
-extension LockModeTests {
-   static var allTests: [(String, (LockModeTests) -> () throws -> Void)] {
-      return [
-                ("testInitArrayLiteral", testInitArrayLiteral),
-                ("testDefaultMatrix", testDefaultMatrix),
-                ("testDescription", testDescription),
-                ("testDebugDescription", testDebugDescription)
+                ("testUnlockWhenNothingLocked", testUnlockWhenNothingLocked),
+                ("testUnlockWhenLockNotOwnedByRequester", testUnlockWhenLockNotOwnedByRequester)
            ]
    }
 }
