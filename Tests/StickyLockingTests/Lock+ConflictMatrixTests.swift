@@ -1,5 +1,5 @@
 ///
-///  Lock+ConflictMatrixTests.swift
+///  Lock+CompatibilityMatrixTests.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -21,14 +21,14 @@ import XCTest
 
 @testable import StickyLocking
 
-class Lock_ConflictMatrixTests: XCTestCase {
+class Lock_CompatibilityMatrixTests: XCTestCase {
 
-    enum TestMode: Lock.Mode {
+    enum TestMode: LockMode {
         case S, X
     }
 
-    let matrix = Lock.ConflictMatrix<TestMode>(arrayLiteral: [[true,  false],
-                                                              [false, false]])
+    let matrix: CompatibilityMatrix<TestMode> = [[true,  false],
+                                            [false, false]]
 
     func testInitAndCompatible() {
 

@@ -28,20 +28,11 @@ internal extension Locker {
     internal class Request: Equatable {
 
         ///
-        /// Request status types
-        ///
-        enum Status: Equatable {
-            case granted            /// The request has been granted the requested lock in the requested mode.
-            case timeout            /// The request timed out and was denied.
-            case denied             /// The request has been denied.
-        }
-
-        ///
         /// Initialize `self` with the initial `mode` and an optional `requester`.
         ///
         /// - Note: `requester` will default to the current threads requester if not passed.
         ///
-        init(_ mode: LockMode, requester: Requester = Requester()) {
+        init(_ mode: T, requester: Requester = Requester()) {
             self.mode       = mode
             self.count      = 1         /// Initial request is the first
             self.requester  = requester
@@ -84,11 +75,11 @@ internal extension Locker {
             return lhs.mode == rhs.mode && lhs.requester == rhs.requester
         }
 
-        var mode: LockMode        /// The requested lock mode.
+        var mode: T        /// The requested lock mode.
         var count: Int            /// The number of times this Requester requested this lock.
 
         let requester: Requester  /// The requester of this lock request.
-        var waitStatus: Status?   /// the current request status (.waiting, .granted, etc).
+        var waitStatus: RequestStatus?   /// the current request status (.waiting, .granted, etc).
 
         private let condition: Condition    /// Condition variable to allow waiting until condition is signaled.
     }
@@ -96,12 +87,12 @@ internal extension Locker {
 
 extension Locker.Request: CustomStringConvertible, CustomDebugStringConvertible {
 
-    public var description: String {
+    var description: String {
         let mode = "\(self.mode)"
-        return "(.\(mode), count: \(self.count), requester: \(self.requester))"
+        return "Request(\(self.requester), .\(mode)\((self.count > 1 ? ", \(self.count)" : "")))"
     }
 
-    public var debugDescription: String {
+    var debugDescription: String {
         return self.description
     }
 }

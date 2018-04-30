@@ -81,3 +81,14 @@ internal extension Locker {
         private var storage: [Request] = []
     }
 }
+
+extension Locker.RequestQueue: CustomStringConvertible, CustomDebugStringConvertible {
+
+    var description: String {
+        return self.storage.description
+    }
+
+    var debugDescription: String {
+        return self.description
+    }
+}

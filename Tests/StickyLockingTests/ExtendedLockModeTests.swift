@@ -23,15 +23,15 @@ import XCTest
 
 // MARK: - All
 
-class LockModeTests: XCTestCase {
+class ExtendedLockModeTests: XCTestCase {
 
     func testInitArrayLiteral() {
-        let matrix = Lock.ConflictMatrix<LockMode>(arrayLiteral: [[true, true, true, true, true, true],
-                                                                  [true, true, true, true, true, true],
-                                                                  [true, true, true, true, true, true],
-                                                                  [true, true, true, true, true, true],
-                                                                  [true, true, true, true, true, true],
-                                                                  [true, true, true, true, true, true]])
+        let matrix: CompatibilityMatrix<ExtendedLockMode> = [[true, true, true, true, true, true],
+                                                        [true, true, true, true, true, true],
+                                                        [true, true, true, true, true, true],
+                                                        [true, true, true, true, true, true],
+                                                        [true, true, true, true, true, true],
+                                                        [true, true, true, true, true, true]]
 
         /// IS
         XCTAssertEqual(matrix.compatible(requested: .IS, current: .IS),  true)
@@ -83,7 +83,7 @@ class LockModeTests: XCTestCase {
     }
 
     func testDefaultMatrix() {
-        let matrix = LockMode.conflictMatrix
+        let matrix = ExtendedLockMode.compatibilityMatrix
 
 
         /// IS
@@ -136,12 +136,12 @@ class LockModeTests: XCTestCase {
     }
 
     func testDescription() {
-        let matrix = Lock.ConflictMatrix<LockMode>(arrayLiteral: [[true, true, true,  true, true, true],
-                                                                  [true, true, false, true, true, true],
-                                                                  [true, true, true,  true, true, true],
-                                                                  [true, true, true,  true, true, true],
-                                                                  [true, true, true,  true, true, true],
-                                                                  [true, true, true,  true, true, true]])
+        let matrix: CompatibilityMatrix<ExtendedLockMode> = [[true, true, true,  true, true, true],
+                                                        [true, true, false, true, true, true],
+                                                        [true, true, true,  true, true, true],
+                                                        [true, true, true,  true, true, true],
+                                                        [true, true, true,  true, true, true],
+                                                        [true, true, true,  true, true, true]]
 
 
         XCTAssertEqual(matrix.description, """
@@ -155,12 +155,12 @@ class LockModeTests: XCTestCase {
     }
 
     func testDebugDescription() {
-        let matrix = Lock.ConflictMatrix<LockMode>(arrayLiteral: [[true, true, true,  true, true, true],
-                                                                  [true, true, false, true, true, true],
-                                                                  [true, true, true,  true, true, true],
-                                                                  [true, true, true,  true, true, true],
-                                                                  [true, true, true,  true, true, true],
-                                                                  [true, true, true,  true, true, true]])
+        let matrix: CompatibilityMatrix<ExtendedLockMode> = [[true, true, true,  true, true, true],
+                                                        [true, true, false, true, true, true],
+                                                        [true, true, true,  true, true, true],
+                                                        [true, true, true,  true, true, true],
+                                                        [true, true, true,  true, true, true],
+                                                        [true, true, true,  true, true, true]]
 
 
         XCTAssertEqual(matrix.debugDescription, """

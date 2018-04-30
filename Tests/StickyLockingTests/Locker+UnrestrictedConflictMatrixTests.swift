@@ -1,5 +1,5 @@
 ///
-///  Locker+UnrestrictedConflictMatrix.swift
+///  Locker+UnrestrictedCompatibilityMatrix.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -25,9 +25,9 @@ import StickyLocking
 ///
 /// `Locker` Tests
 ///
-class LockerUnrestrictedConflictMatrixTests: XCTestCase {
+class LockerUnrestrictedCompatibilityMatrixTests: XCTestCase {
 
-    let locker = Locker(conflictMatrix: Lock.ConflictMatrix<LockMode>(arrayLiteral:
+    let locker = Locker(compatibilityMatrix:
         [
             /* Requested       IS,    IX,    S,    SIX,    U,     X   */
             /* IS        */  [true,  true,  true,  true,  true,  true],
@@ -37,10 +37,10 @@ class LockerUnrestrictedConflictMatrixTests: XCTestCase {
             /* U         */  [true,  true,  true,  true,  true,  true],
             /* X         */  [true,  true,  true,  true,  true,  true]
         ]
-    ), groupModeMatrix: LockMode.groupModeMatrix)
+    , groupModeMatrix: ExtendedLockMode.groupModeMatrix)
 
     func testLockWhenExistingLock() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
         let group = DispatchGroup()
 

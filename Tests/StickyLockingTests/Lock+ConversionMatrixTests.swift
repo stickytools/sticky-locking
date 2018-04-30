@@ -23,12 +23,12 @@ import XCTest
 
 class LockGroupModeMatrixTests: XCTestCase {
 
-    enum TestMode: Lock.Mode {
+    enum TestMode: LockMode {
         case S, X
     }
 
-    let matrix = Lock.GroupModeMatrix<TestMode>(arrayLiteral: [[.S, .X],
-                                                                [.X, .X]])
+    let matrix: GroupModeMatrix<TestMode> = [[.S, .X],
+                                             [.X, .X]]
 
     func testInitAndCompatible() {
 

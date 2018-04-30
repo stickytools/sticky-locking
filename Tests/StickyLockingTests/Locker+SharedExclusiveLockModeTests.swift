@@ -1,5 +1,5 @@
 ///
-///  Locker+SimpleLockModeTests.swift
+///  Locker+SharedExclusiveLockModeTests.swift
 ///
 ///  Copyright 2017 Tony Stone
 ///
@@ -25,48 +25,28 @@ import StickyLocking
 ///
 /// `Locker` Tests
 ///
-class LockerSimpleLockModeTests: XCTestCase {
-
-    enum TestMode: Lock.Mode {
-        case Shared, eXclusive
-
-        public static let conflictMatrix = Lock.ConflictMatrix<TestMode>(arrayLiteral:
-            [
-                /* Requested     Shared, eXclusive  */
-                /* Shared    */  [true,    false],
-                /* eXclusive */  [false,   false],
-            ]
-        )
-
-        public static let groupModeMatrix = Lock.GroupModeMatrix<TestMode>(arrayLiteral:
-            [
-                /* Requested     Shared,        eXclusive  */
-                /* Shared    */  [Shared,       eXclusive],
-                /* eXclusive */  [eXclusive,    eXclusive],
-            ]
-        )
-    }
-
-    let locker = Locker(conflictMatrix: TestMode.conflictMatrix, groupModeMatrix: TestMode.groupModeMatrix)
+class LockerSharedExclusiveLockModeTests: XCTestCase {
+    
+    let locker = Locker(compatibilityMatrix: SharedExclusiveLockMode.compatibilityMatrix, groupModeMatrix: SharedExclusiveLockMode.groupModeMatrix)
 
     func testInit() {
-        XCTAssertNotNil(Locker(conflictMatrix: TestMode.conflictMatrix, groupModeMatrix: TestMode.groupModeMatrix))
+        XCTAssertNotNil(Locker(compatibilityMatrix: SharedExclusiveLockMode.compatibilityMatrix, groupModeMatrix: SharedExclusiveLockMode.groupModeMatrix))
     }
 
     // MARK: - Targeted Tests
 
     func testLockWhenNoOtherLocks() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
-        XCTAssertEqual(locker.lock(input, mode: .eXclusive), .granted)
+        XCTAssertEqual(locker.lock(input, mode: .X), .granted)
         XCTAssertEqual(locker.unlock(input), true)
     }
 
     func testLockWhenExistingLockThatThreadOwns() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
-        XCTAssertEqual(locker.lock(input, mode: .eXclusive), .granted)
-        XCTAssertEqual(locker.lock(input, mode: .eXclusive), .granted)
+        XCTAssertEqual(locker.lock(input, mode: .X), .granted)
+        XCTAssertEqual(locker.lock(input, mode: .X), .granted)
 
         /// Cleanup
         XCTAssertEqual(locker.unlock(input), true)
@@ -74,16 +54,16 @@ class LockerSimpleLockModeTests: XCTestCase {
     }
 
     func testLockWhenExistingLockThatThreadDoesNotOwnButIsCompatible() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
         let group = DispatchGroup()
 
         /// Aquire a lock on the main thread.
-        XCTAssertEqual(self.locker.lock(input, mode: .Shared), .granted)
+        XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
 
         /// Get a shared lock on a background thread
         DispatchQueue.global().async(group: group) {
             /// Now lock with a compatible lock in the backgroun.
-            XCTAssertEqual(self.locker.lock(input, mode: .Shared), .granted)
+            XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
             XCTAssertEqual(self.locker.unlock(input), true)
         }
         XCTAssertEqual(group.wait(timeout: .now() + 0.1), .success)
@@ -91,16 +71,16 @@ class LockerSimpleLockModeTests: XCTestCase {
     }
 
     func testLockWhenExistingIncompatibleLockForcesWait() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
         let group = DispatchGroup()
 
         /// Acquire a lock on the main thread.
-        XCTAssertEqual(self.locker.lock(input, mode: .eXclusive), .granted)
+        XCTAssertEqual(self.locker.lock(input, mode: .X), .granted)
 
         /// Lock an incompatible lock on a background thread.
         DispatchQueue.global().async(group: group) {
-            XCTAssertEqual(self.locker.lock(input, mode: .Shared), .granted)
+            XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
             XCTAssertEqual(self.locker.unlock(input), true)
         }
         ///
@@ -117,16 +97,16 @@ class LockerSimpleLockModeTests: XCTestCase {
     }
 
     func testLockWhenExistingIncompatibleLockForcesWaitWithTimeout() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
         let group = DispatchGroup()
 
-        XCTAssertEqual(self.locker.lock(input, mode: .Shared), .granted)
+        XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
 
         /// Lock an incompatible lock on a background thread.
         DispatchQueue.global().async(group: group) {
             /// Attempt to acquire a lock on the main thread and allow it to timeout.
-            XCTAssertEqual(self.locker.lock(input, mode: .eXclusive, timeout: .now() + 0.1), .timeout)
+            XCTAssertEqual(self.locker.lock(input, mode: .X, timeout: .now() + 0.1), .timeout)
         }
         group.wait()
 
@@ -135,17 +115,17 @@ class LockerSimpleLockModeTests: XCTestCase {
     }
 
     func testLockWhenExistingIncompatibleLockAllowingTimeout() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
         let group = DispatchGroup()
 
         /// Acquire a lock on the main thread.
-        XCTAssertEqual(self.locker.lock(input, mode: .eXclusive), .granted)
+        XCTAssertEqual(self.locker.lock(input, mode: .X), .granted)
 
         for _ in 0..<10 {
             /// Lock an incompatible lock on a background thread.
             DispatchQueue.global().async(group: group) {
-                XCTAssertEqual(self.locker.lock(input, mode: .Shared, timeout: .now() + 0.1), .timeout)
+                XCTAssertEqual(self.locker.lock(input, mode: .S, timeout: .now() + 0.1), .timeout)
             }
         }
         /// Now our lock should be acquired and has released the dispatch group.
@@ -156,26 +136,26 @@ class LockerSimpleLockModeTests: XCTestCase {
     }
 
     func testLockMultipleResourcesOnSameThread() throws {
-        let input = (resourceID1: Lock.ResourceID(identifier: "database"), resourceID2: Lock.ResourceID(identifier: "page"))
+        let input = (resource1: "database1", resource2: "page1")
 
-        XCTAssertEqual(self.locker.lock(input.resourceID1, mode: .Shared), .granted)
-        XCTAssertEqual(self.locker.lock(input.resourceID2, mode: .eXclusive), .granted)
+        XCTAssertEqual(self.locker.lock(input.resource1, mode: .S), .granted)
+        XCTAssertEqual(self.locker.lock(input.resource2, mode: .X), .granted)
 
-        XCTAssertEqual(self.locker.unlock(input.resourceID2), true)
-        XCTAssertEqual(self.locker.unlock(input.resourceID1), true)
+        XCTAssertEqual(self.locker.unlock(input.resource2), true)
+        XCTAssertEqual(self.locker.unlock(input.resource1), true)
     }
 
     // MARK: - Round trip tests
 
     func testLock() throws {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
-        XCTAssertEqual(locker.lock(input, mode: .eXclusive), .granted)
+        XCTAssertEqual(locker.lock(input, mode: .X), .granted)
         XCTAssertEqual(locker.unlock(input), true)
     }
 
     func testLockUnlockCycle() {
-        let input = Lock.ResourceID(identifier: "database")
+        let input = "database1"
 
         let group = DispatchGroup()
 
@@ -183,7 +163,7 @@ class LockerSimpleLockModeTests: XCTestCase {
         for _ in 0..<5 {
             DispatchQueue.global().async(group: group) {
 
-                XCTAssertEqual(self.locker.lock(input, mode: .eXclusive), .granted)
+                XCTAssertEqual(self.locker.lock(input, mode: .X), .granted)
                 XCTAssertEqual(self.locker.unlock(input), true)
             }
         }
@@ -191,31 +171,31 @@ class LockerSimpleLockModeTests: XCTestCase {
     }
 
     func testLockUnlockCycleMultipleLocks() {
-        let input = (resourceID1: Lock.ResourceID(identifier: "database"), resourceID2: Lock.ResourceID(identifier: "page"))
+        let input = (resource1: "database1", resource2: "page1")
 
         /// Repeated locks and unlocks
         let group = DispatchGroup()
 
         for _ in 0..<5 {
             DispatchQueue.global().async(group: group) {
-                XCTAssertEqual(self.locker.lock(input.resourceID1, mode: .Shared), .granted)
-                XCTAssertEqual(self.locker.lock(input.resourceID2, mode: .eXclusive), .granted)
+                XCTAssertEqual(self.locker.lock(input.resource1, mode: .S), .granted)
+                XCTAssertEqual(self.locker.lock(input.resource2, mode: .X), .granted)
 
-                XCTAssertEqual(self.locker.unlock(input.resourceID2), true)
-                XCTAssertEqual(self.locker.unlock(input.resourceID1), true)
+                XCTAssertEqual(self.locker.unlock(input.resource2), true)
+                XCTAssertEqual(self.locker.unlock(input.resource1), true)
             }
         }
         group.wait()
     }
 
     func testLockUnlockCycleRecursiveLocks() {
-        let input = (resourceID: Lock.ResourceID(identifier: "database"), lockCount: 5)
+        let input = (resource: "database1", lockCount: 5)
 
         for _ in 0..<input.lockCount {
-            XCTAssertEqual(locker.lock(input.resourceID, mode: .eXclusive), .granted)
+            XCTAssertEqual(locker.lock(input.resource, mode: .X), .granted)
         }
         for _ in 0..<input.lockCount  {
-            XCTAssertEqual(locker.unlock(input.resourceID), true)
+            XCTAssertEqual(locker.unlock(input.resource), true)
         }
     }
 
@@ -225,13 +205,13 @@ class LockerSimpleLockModeTests: XCTestCase {
         let group = DispatchGroup()
 
         for i in 0..<50 {
-            let database = Lock.ResourceID(identifier: "database #\(i)")
-            let page     = Lock.ResourceID(identifier: "page #\(i)")
+            let database = "database\(i)"
+            let page     = "database\(i):page\(i)"
 
             DispatchQueue.global().async(group: group) {
 
-                XCTAssertEqual(self.locker.lock(database, mode: .Shared), .granted)
-                XCTAssertEqual(self.locker.lock(page, mode: .eXclusive), .granted)
+                XCTAssertEqual(self.locker.lock(database, mode: .S), .granted)
+                XCTAssertEqual(self.locker.lock(page, mode: .X), .granted)
 
                 XCTAssertEqual(self.locker.unlock(page), true)
                 XCTAssertEqual(self.locker.unlock(database), true)
@@ -245,12 +225,12 @@ class LockerSimpleLockModeTests: XCTestCase {
         /// Repeated locks and unlocks
         let group = DispatchGroup()
 
-        let page = Lock.ResourceID(identifier: "page")
+        let page = "page1"
 
         for _ in 0..<5 {
 
             DispatchQueue.global().async(group: group) {
-                XCTAssertEqual(self.locker.lock(page, mode: .Shared), .granted)
+                XCTAssertEqual(self.locker.lock(page, mode: .S), .granted)
                 XCTAssertEqual(self.locker.unlock(page), true)
             }
         }
@@ -260,7 +240,23 @@ class LockerSimpleLockModeTests: XCTestCase {
     // MARK: - Unlock tests
 
     func testUnlockWhenNothingLocked() {
-        XCTAssertEqual(self.locker.unlock(Lock.ResourceID(identifier: "database")), false)
+        XCTAssertEqual(self.locker.unlock("database1"), false)
+    }
+
+    func testUnlockWhenLockNotOwnedByRequester() throws {
+        let input = "database1"
+        let expected = false
+
+        let group = DispatchGroup()
+        group.enter()
+
+        DispatchQueue.global().async {
+            _ = self.locker.lock(input, mode: .X)
+            group.leave()
+        }
+        group.wait()
+
+        XCTAssertEqual(locker.unlock(input), expected)
     }
 }
 

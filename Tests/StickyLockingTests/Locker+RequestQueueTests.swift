@@ -24,7 +24,7 @@ import Dispatch
 
 class LockerRequestQueueTests: XCTestCase {
 
-    enum TestMode: Lock.Mode {
+    enum TestMode: LockMode {
         case S, X
     }
 
