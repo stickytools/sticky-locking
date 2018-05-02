@@ -601,6 +601,7 @@ class LockerExtendedLockModeTests: XCTestCase {
     /// ```
     ///
     func testLockConversionScenario3Example1Deadlock() {
+
         let input = "database1"
 
         let requester = DispatchGroup()
@@ -610,7 +611,7 @@ class LockerExtendedLockModeTests: XCTestCase {
         cleanup.enter()
         blocked.enter()
 
-        for _ in 0..<2 {
+        for i in 0..<5 {
 
             locked.enter()
             DispatchQueue.global().async(group: requester) {
@@ -620,8 +621,13 @@ class LockerExtendedLockModeTests: XCTestCase {
                 blocked.wait()
 
                 /// Now upgrade the lock
-                XCTAssertEqual(self.locker.lock(input, mode: .X, timeout: .now() + 0.2), .timeout)
-
+                if i <= 0 {
+                    /// the first one we send with no timeout as this will be the lock that is granted once the time out happens for the remainder of the locks.
+                    XCTAssertEqual(self.locker.lock(input, mode: .X), .granted)
+                } else {
+                    /// These will deadlock with the first one and altimately timeout.
+                    XCTAssertEqual(self.locker.lock(input, mode: .X, timeout: .now() + 0.2), .timeout)
+                }
                 cleanup.wait()   /// Wait to cleanup
 
                 XCTAssertEqual(self.locker.unlock(input), true)
