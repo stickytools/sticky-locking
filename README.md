@@ -21,11 +21,7 @@
 
 ## Overview
 
-**StickyLocking** is a general purpose embedded lock manager which  allows for locking any resource hierarchy.  Installable Lock modes allow for custimization of the locking system that can meet the needs of almost any locking scenario.
-
-It offers multiple levels of locking for various use cases.  
-
-### **Hierarchical Locker**
+**StickyLocking** A general purpose embedded hierarchical lock manager used to build highly concurrent applications of all types.
 
 Sticky Locking provides the `Locker` class which is a high-level locking system designed to facilitate many different 
 concurrency use cases including simple readers-writer locks which provide shared access for read operations and 
@@ -47,21 +43,17 @@ An example use case for this mode may be to protect access to a file or many fil
 to share access to the file and writers to be granted exclusive access forcing readers and writers to wait until the
 write operation is complete before they proceed.
 
+In the following diagram shows 4 reader thread granted read access to the file resource.
+![Readers-writer Lock Example - Readers Granted](Documentation/StickyLocking%20-%20Readers-writer%20Mode%20Diagrams%20-%20Readers%20Granted.png)
+
+Once all readers unlock the resource, or the writer was first to request, the writer will be granted access forcing readers and other writers to wait.
+![Readers-writer Lock Example - Writer Granted](Documentation/StickyLocking%20-%20Readers-writer%20Mode%20Diagrams%20-%20Writer%20Granted.png)
+
 `ExtendedLockMode` an extended mode that includes intention and update modes which can be used for advanced database 
 type use cases.  This LockMode set was designed to be used by other models in the Sticky Tools suite of libraries.
 
 You are free to define your own LockMode set depending on your use case, from simpler mode structures to more complex,
 Sticky Locking will adapt to the mode given.
-
-### **Mutexes & Conditions**
-
-Sticky Locking provides a low-level mutual exclusion lock through the `Mutex` class to protect critical sections of 
-your code.  In addition, wait conditions (`Condition`) are provided to allow for threads to wait for a mutex to 
-become available.
-
-The mutual exclusion lock is provided through the `Mutex` class while wait conditions can be created with the
-`Condition` class.  Internally, the higher level components are implemented using these two primitives, and other
-modules in the Sticky Tools suite of libraries also use the mutex for protecting various critical sections of code.
 
 ## Sources and Binaries
 
