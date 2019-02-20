@@ -49,7 +49,7 @@ add_custom_target(build-clean
 #
 add_custom_target(xcode-project
         DEPENDS build-tools generate-source generate-tests
-        COMMAND swift package generate-xcodeproj --enable-code-coverage
+        COMMAND swift package generate-xcodeproj --xcconfig-overrides Package.xcconfig --enable-code-coverage
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         SOURCES Package.swift)
 

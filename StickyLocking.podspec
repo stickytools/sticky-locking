@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = "StickyLocking"
-  s.version          = "1.0.0-beta.1"
+  s.version          = "1.0.0-beta.2"
   s.summary          = "A general purpose embedded hierarchical lock manager used to build highly concurrent applications of all types."
 
   s.homepage         = "https://github.com/stickytools/sticky-locking"

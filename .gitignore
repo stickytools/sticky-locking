@@ -18,18 +18,6 @@ Documentation/html/*
 *.xcworkspace
 build/
 DerivedData/
-
-#==============================================================================#
-# Idea (Jetbrains)
-#
-# We ignore all jetbrains project files since it is a generated output of cmake.
-#
-#==============================================================================#
-.idea
-
-#==============================================================================#
-# Various settings
-#==============================================================================#
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -39,6 +27,14 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 xcuserdata/
+
+#==============================================================================#
+# Idea (Jetbrains)
+#
+# We ignore all jetbrains project files since it is a generated output of cmake.
+#
+#==============================================================================#
+.idea
 
 #==============================================================================#
 # Other

@@ -4,7 +4,10 @@
    <img src="https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux%20-lightgray.svg?style=flat" alt="Platforms: iOS | macOS | watchOS | tvOS | Linux" />
 </a>
 <a href="https://github.com/stickytools/sticky-locking/" target="_blank">
-   <img src="https://img.shields.io/badge/Swift-4.0-orange.svg?style=flat" alt="Swift 4.0">
+   <img src="https://img.shields.io/badge/Swift-4.2-orange.svg?style=flat" alt="Swift 4.2">
+</a>
+<a href="https://github.com/stickytools/sticky-locking/" target="_blank">
+    <img src="https://img.shields.io/cocoapods/v/StickyLocking.svg?style=flat" alt="Pod version">
 </a>
 <a href="https://travis-ci.org/stickytools/sticky-locking" target="_blank">
   <img src="https://travis-ci.org/stickytools/sticky-locking.svg?branch=master" alt="travis-ci.org" />
@@ -12,24 +15,18 @@
 <a href="https://codecov.io/gh/stickytools/sticky-locking" target="_blank">
   <img src="https://codecov.io/gh/stickytools/sticky-locking/branch/master/graph/badge.svg" alt="Codecov" />
 </a>
-<a href="https://github.com/stickytools/sticky-locking/" target="_blank">
-    <img src="https://img.shields.io/cocoapods/v/StickyLocking.svg?style=flat" alt="Pod version">
-</a>
-<a href="https://github.com/stickytools/sticky-locking/" target="_blank">
-    <img src="https://img.shields.io/cocoapods/dt/StickyLocking.svg?style=flat" alt="Downloads">
-</a>
 
 ## Overview
 
 **StickyLocking** is a general purpose embedded lock manager which  allows for locking any resource hierarchy.  Installable Lock modes allow for custimization of the locking system that can meet the needs of almost any locking scenario.
 
-It offers multiple levels of locking for various use cases.  
+It offers multiple levels of locking for various use cases.
 
 ### **Hierarchical Locker**
 
-Sticky Locking provides the `Locker` class which is a high-level locking system designed to facilitate many different 
-concurrency use cases including simple readers-writer locks which provide shared access for read operations and 
-exclusive access for write operations to more complex hierarchical locking schemes used to power database file, 
+Sticky Locking provides the `Locker` class which is a high-level locking system designed to facilitate many different
+concurrency use cases including simple readers-writer locks which provide shared access for read operations and
+exclusive access for write operations to more complex hierarchical locking schemes used to power database file,
 database, page, and row level locking.
 
 The `Locker` is highly configurable to your specific use case using three interconnected constructs.
@@ -40,14 +37,14 @@ The `Locker` is highly configurable to your specific use case using three interc
 
 Sticky has two built-in sets of these values in the following enums.
 
-`SharedExclusiveLockMode` which is a simple readers-writer system used to provide shared read access and exclusive 
+`SharedExclusiveLockMode` which is a simple readers-writer system used to provide shared read access and exclusive
 write access.
 
 An example use case for this mode may be to protect access to a file or many files which require all readers to be able
 to share access to the file and writers to be granted exclusive access forcing readers and writers to wait until the
 write operation is complete before they proceed.
 
-`ExtendedLockMode` an extended mode that includes intention and update modes which can be used for advanced database 
+`ExtendedLockMode` an extended mode that includes intention and update modes which can be used for advanced database
 type use cases.  This LockMode set was designed to be used by other models in the Sticky Tools suite of libraries.
 
 You are free to define your own LockMode set depending on your use case, from simpler mode structures to more complex,
@@ -55,8 +52,8 @@ Sticky Locking will adapt to the mode given.
 
 ### **Mutexes & Conditions**
 
-Sticky Locking provides a low-level mutual exclusion lock through the `Mutex` class to protect critical sections of 
-your code.  In addition, wait conditions (`Condition`) are provided to allow for threads to wait for a mutex to 
+Sticky Locking provides a low-level mutual exclusion lock through the `Mutex` class to protect critical sections of
+your code.  In addition, wait conditions (`Condition`) are provided to allow for threads to wait for a mutex to
 become available.
 
 The mutual exclusion lock is provided through the `Mutex` class while wait conditions can be created with the
@@ -78,11 +75,21 @@ You can find the latest sources and binaries on [github](https://github.com/stic
    - Push to the branch: `git push origin my-new-feature`
    - Submit a pull request :-)
 
-## Installation 
+## Installation
+
+### Swift Package Manager
 
 **StickyLocking** supports dependency management via Swift Package Manager on All Apple OS variants as well as Linux.
 
 Please see [Swift Package Manager](https://swift.org/package-manager/#conceptual-overview) for further information.
+
+### CocoaPods
+
+StickyLocking is available through [CocoaPods](http://cocoapods.org). To install it, simply add the following line to your Podfile:
+
+```ruby
+   pod "StickyLocking"
+```
 
 ## Minimum Requirements
 
@@ -90,8 +97,8 @@ Build Environment
 
 | Platform | Swift | Swift Build | Xcode |
 |:--------:|:-----:|:----------:|:------:|
-| Linux    | 4.0 | &#x2714; | &#x2718; |
-| OSX      | 4.0 | &#x2714; | Xcode 9.0 |
+| Linux    | 4.2 | &#x2714; | &#x2718; |
+| OSX      | 4.2 | &#x2714; | Xcode 10.0 |
 
 Minimum Runtime Version
 
