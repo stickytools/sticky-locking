@@ -196,7 +196,7 @@ cause spurious waits.
 
 Also keep in mind that the hashValue should never change for the resource.  If the hashValue changes over the life of the
 resource, the locker will consider it a different resource each time the hashValue changes.  For instance, an Array<> hashValue
-changes with each element that is added or removed to the array, therefore the Array<> instance itself could not be used
+changes with each element that is added or removed from the array, therefore the Array<> instance itself could not be used
 as a lock resource on its own.  You would have to use a surrogate Resource such as a fixed String or integer as the Resource
 identifier.
 
