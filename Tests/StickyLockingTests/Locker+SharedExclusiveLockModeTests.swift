@@ -57,12 +57,12 @@ class LockerSharedExclusiveLockModeTests: XCTestCase {
         let input = "database1"
         let group = DispatchGroup()
 
-        /// Aquire a lock on the main thread.
+        /// Acquire a lock on the main thread.
         XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
 
         /// Get a shared lock on a background thread
         DispatchQueue.global().async(group: group) {
-            /// Now lock with a compatible lock in the backgroun.
+            /// Now lock with a compatible lock in the background.
             XCTAssertEqual(self.locker.lock(input, mode: .S), .granted)
             XCTAssertEqual(self.locker.unlock(input), true)
         }
