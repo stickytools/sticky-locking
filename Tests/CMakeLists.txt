@@ -25,21 +25,3 @@ add_custom_target(tests ALL
 add_custom_target(generate-tests)
 
 add_dependencies(tests generate-tests)
-
-#
-# Build the LinuxMain file.
-#
-# Note: We do this for all platforms so that we are assured that it is maintained whenever a change is made to the tests.
-#
-add_custom_command(
-        DEPENDS build-tools
-        OUTPUT "${LINUX_MAIN}"
-        COMMAND "${BUILD_TOOLS_BIN}/xctest_tool.rb"
-        ARGS --package-path "${CMAKE_SOURCE_DIR}"
-        VERBATIM
-)
-
-add_custom_target(linux-main
-        DEPENDS "${LINUX_MAIN}" generate-tests
-        )
-add_dependencies(tests linux-main)
