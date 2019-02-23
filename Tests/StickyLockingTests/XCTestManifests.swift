@@ -167,7 +167,7 @@ extension WaitTimeTests {
     ]
 }
 
-#if !os(macOS)
+#if !canImport(ObjectiveC)
 public func __allTests() -> [XCTestCaseEntry] {
     return [
         testCase(ConditionTests.__allTests),
