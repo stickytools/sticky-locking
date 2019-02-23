@@ -16,6 +16,8 @@
   <img src="https://codecov.io/gh/stickytools/sticky-locking/branch/master/graph/badge.svg" alt="Codecov" />
 </a>
 
+---
+
 **StickyLocking** is a general purpose embedded lock manager which  allows for locking any resource hierarchy.  Installable Lock modes allow for customization of the locking system that can meet the needs of almost any locking scenario.
 
 ## Documentation
